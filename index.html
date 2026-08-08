@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Piper TTS Tiếng Việt</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#172033;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+main{max-width:820px;margin:auto;padding:20px 15px 40px}.card{background:#fff;border:1px solid #e3e8f1;border-radius:22px;padding:20px;box-shadow:0 10px 35px rgba(20,30,60,.07)}
+h1{margin:0 0 6px;font-size:26px}.sub{color:#667085;margin-bottom:20px}
+label{display:block;font-weight:650;margin:15px 0 8px}textarea{width:100%;height:220px;resize:vertical;border:1px solid #d7deea;border-radius:14px;padding:14px;font:inherit;font-size:17px;line-height:1.55}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}select{width:100%;padding:12px;border:1px solid #d7deea;border-radius:12px;background:#fff;font:inherit}
+.buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}button{border:0;border-radius:12px;padding:12px 16px;font-weight:650;font-size:15px}.primary{background:#315efb;color:#fff}.secondary{background:#eef1f7}.download{background:#fff;border:1px solid #d7deea}
+.status{margin-top:15px;background:#f3f6fa;border-radius:12px;padding:12px;color:#667085;font-size:14px}progress{width:100%;margin-top:10px;display:none}
+audio{width:100%;margin-top:14px}.hint{font-size:12px;color:#7b8495;line-height:1.5;margin-top:13px}
+@media(max-width:600px){.row{grid-template-columns:1fr}.card{padding:16px}}
+</style>
+</head>
+<body>
+<main><div class="card">
+<h1>🇻🇳 Piper TTS tiếng Việt</h1>
+<div class="sub">Piper VIVOS chạy trực tiếp trên trình duyệt. Không cần API key.</div>
+<label>Văn bản</label>
+<textarea id="text">Xin chào! Đây là Piper TTS tiếng Việt chạy trực tiếp trên trình duyệt.</textarea>
+<div class="row">
+<div><label>Speaker</label><select id="speaker"></select></div>
+<div><label>Model</label><select disabled><option>vi_VN-vivos-x_low (local)</option></select></div>
+</div>
+<div class="buttons">
+<button class="primary" id="speak">▶ Đọc</button>
+<button class="secondary" id="stop">■ Dừng</button>
+<button class="download" id="download" disabled>⬇ Tải WAV</button>
+</div>
+<div class="status" id="status">Sẵn sàng.</div>
+<progress id="progress" max="100" value="0"></progress>
+<audio id="audio" controls hidden></audio>
+<div class="hint">Lần đầu có thể mất một lúc để tải Piper phonemizer WASM (~19 MB) và model (~28 MB). Model được giữ trong bộ nhớ của trang.</div>
+</div></main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.18.0/ort.min.js"></script>
+<script type="module">
+import { createPiperPhonemize } from './piper.js';
+
+const MODEL='./vi_VN-vivos-x_low.onnx';
+const CONFIG='./vi_VN-vivos-x_low.onnx.json';
+const ORT_WASM='https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.18.0/';
+const PIPER_BASE='https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/piper_phonemize';
+
+const speakerMap={
+VIVOSSPK13:0,VIVOSSPK14:1,VIVOSSPK15:2,VIVOSSPK16:3,VIVOSSPK17:4,VIVOSSPK18:5,VIVOSSPK19:6,VIVOSSPK20:7,VIVOSSPK21:8,VIVOSSPK22:9,
+VIVOSSPK26:10,VIVOSSPK34:11,VIVOSSPK40:12,VIVOSSPK41:13,VIVOSSPK42:14,VIVOSSPK43:15,VIVOSSPK44:16,VIVOSSPK45:17,VIVOSSPK46:18,VIVOSSPK38:19,
+VIVOSSPK31:20,VIVOSSPK35:21,VIVOSSPK01:22,VIVOSSPK02:23,VIVOSSPK03:24,VIVOSSPK04:25,VIVOSSPK05:26,VIVOSSPK06:27,VIVOSSPK07:28,VIVOSSPK08:29,
+VIVOSSPK09:30,VIVOSSPK10:31,VIVOSSPK11:32,VIVOSSPK12:33,VIVOSSPK27:34,VIVOSSPK36:35,VIVOSSPK33:36,VIVOSSPK32:37,VIVOSSPK29:38,VIVOSSPK39:39,
+VIVOSSPK25:40,VIVOSSPK28:41,VIVOSSPK30:42,VIVOSSPK37:43,VIVOSSPK23:44,VIVOSSPK24:45,VIVOSDEV02:46,VIVOSDEV03:47,VIVOSDEV01:48,VIVOSDEV04:49,
+VIVOSDEV05:50,VIVOSDEV06:51,VIVOSDEV07:52,VIVOSDEV08:53,VIVOSDEV09:54,VIVOSDEV10:55,VIVOSDEV11:56,VIVOSDEV12:57,VIVOSDEV13:58,VIVOSDEV14:59,
+VIVOSDEV15:60,VIVOSDEV16:61,VIVOSDEV17:62,VIVOSDEV18:63,VIVOSDEV19:64};
+
+const text=document.getElementById('text'), speaker=document.getElementById('speaker'), status=document.getElementById('status'),
+audio=document.getElementById('audio'), progress=document.getElementById('progress'), download=document.getElementById('download');
+Object.entries(speakerMap).forEach(([n,id])=>{const o=document.createElement('option');o.value=id;o.textContent=`${id} — ${n}`;speaker.appendChild(o)});
+
+let config=null, session=null, blob=null, url=null, stopped=false;
+
+function pcm2wav(samples, channels, sampleRate){
+ const buffer=new ArrayBuffer(44+samples.length*2), view=new DataView(buffer);
+ const write=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i))};
+ write(0,'RIFF');view.setUint32(4,36+samples.length*2,true);write(8,'WAVE');write(12,'fmt ');
+ view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,channels,true);view.setUint32(24,sampleRate,true);
+ view.setUint32(28,sampleRate*channels*2,true);view.setUint16(32,channels*2,true);view.setUint16(34,16,true);write(36,'data');view.setUint32(40,samples.length*2,true);
+ let p=44;for(let i=0;i<samples.length;i++,p+=2){let x=Math.max(-1,Math.min(1,samples[i]));view.setInt16(p,x<0?x*0x8000:x*0x7fff,true)}return new Uint8Array(buffer)
+}
+
+async function init(){
+ status.textContent='Đang tải model...'; progress.style.display='block';
+ const [cfgRes,modelRes]=await Promise.all([fetch(CONFIG),fetch(MODEL)]);
+ if(!cfgRes.ok||!modelRes.ok)throw new Error('Không tải được model local.');
+ config=await cfgRes.json();
+ let total=Number(modelRes.headers.get('content-length'))||27789413, loaded=0;
+ const reader=modelRes.body?.getReader();
+ let chunks=[];
+ if(reader){for(;;){const {done,value}=await reader.read();if(done)break;chunks.push(value);loaded+=value.length;progress.value=loaded/total*100;status.textContent=`Đang tải model: ${Math.round(progress.value)}%`}}
+ else chunks=[new Uint8Array(await modelRes.arrayBuffer())];
+ let size=chunks.reduce((a,b)=>a+b.length,0), bytes=new Uint8Array(size),off=0;for(const c of chunks){bytes.set(c,off);off+=c.length}
+ status.textContent='Đang khởi tạo ONNX...';
+ ort.env.wasm.wasmPaths=ORT_WASM;ort.env.wasm.numThreads=1;ort.env.allowLocalModels=false;
+ session=await ort.InferenceSession.create(bytes.buffer);
+ progress.style.display='none';status.textContent='Sẵn sàng.';
+}
+
+async function phonemize(text){
+ const input=JSON.stringify([{text:text.trim()}]);
+ return await new Promise(async(resolve,reject)=>{
+  try{
+   const mod=await createPiperPhonemize({
+    print:data=>resolve(JSON.parse(data).phoneme_ids),
+    printErr:msg=>reject(new Error(msg)),
+    locateFile:url=>url.endsWith('.wasm')?PIPER_BASE+'.wasm':url.endsWith('.data')?PIPER_BASE+'.data':url
+   });
+   mod.callMain(['-l',config.espeak.voice,'--input',input,'--espeak_data','/espeak-ng-data']);
+  }catch(e){reject(e)}
+ });
+}
+
+async function synthesize(){
+ stopped=false;const value=text.value.trim();if(!value){status.textContent='Hãy nhập văn bản.';return}
+ try{
+  if(!session)await init();
+  status.textContent='Đang chuyển chữ thành âm thanh...';
+  const ids=await phonemize(value);
+  if(stopped)return;
+  const sid=Number(speaker.value);
+  const feeds={
+   input:new ort.Tensor('int64',ids,[1,ids.length]),
+   input_lengths:new ort.Tensor('int64',[ids.length]),
+   scales:new ort.Tensor('float32',[config.inference.noise_scale,config.inference.length_scale,config.inference.noise_w])
+  };
+  feeds.sid=new ort.Tensor('int64',[sid]);
+  const result=await session.run(feeds);
+  blob=new Blob([pcm2wav(result.output.data,1,config.audio.sample_rate)],{type:'audio/wav'});
+  if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(blob);audio.src=url;audio.hidden=false;download.disabled=false;
+  status.textContent='Đã tạo xong.';audio.play().catch(()=>{});
+ }catch(e){console.error(e);status.textContent='Lỗi: '+(e?.message||e)}
+}
+document.getElementById('speak').onclick=synthesize;
+document.getElementById('stop').onclick=()=>{stopped=true;audio.pause();status.textContent='Đã dừng.'};
+download.onclick=()=>{if(!blob)return;const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='piper-vietnamese.wav';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+</script>
+</body></html>
