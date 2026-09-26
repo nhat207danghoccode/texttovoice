@@ -2,151 +2,251 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Camera AI - Quét vật thể</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chụp - Vẽ Khung Vật Thể</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Arial,sans-serif; }
   body {
-    min-height:100vh; background: linear-gradient(135deg, #0f172a, #1e293b);
-    display:flex; align-items:center; justify-content:center; padding:20px;
-    color:#e2e8f0;
+    min-height:100vh;
+    background: radial-gradient(circle at 30% 10%, #1a2332, #0a0e14 80%);
+    display:flex; align-items:center; justify-content:center;
+    color:#e8f0fe; padding:16px;
   }
-  .app { width:100%; max-width:900px; background:rgba(30,41,59,0.8);
-    border-radius:24px; padding:24px; border:1px solid #334155;
-    box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); }
-  h1 { font-size:1.6rem; margin-bottom:6px; color:#93c5fd; }
-  .sub { color:#94a3b8; margin-bottom:18px; font-size:.9rem; }
-
-  .wrapper { position:relative; width:100%; aspect-ratio:4/3;
-    background:#000; border-radius:16px; overflow:hidden;
-    border:2px solid #334155; }
-  video, canvas { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; }
-  video { transform: scaleX(-1); z-index:1; }
-  canvas { transform: scaleX(-1); z-index:2; pointer-events:none; }
-
-  .bar { margin-top:16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
-  button {
-    background:#2563eb; color:white; border:none; padding:12px 24px;
-    border-radius:40px; font-size:.95rem; font-weight:600; cursor:pointer;
-    transition:.2s;
+  .app {
+    width:100%; max-width:900px;
+    background: rgba(20,30,45,0.85);
+    border-radius:28px; border:1px solid rgba(100,180,255,0.2);
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.9);
+    padding:24px;
   }
-  button:hover:not(:disabled) { background:#1d4ed8; transform:translateY(-2px); }
-  button:disabled { opacity:.5; cursor:not-allowed; }
-  button.stop { background:#dc2626; }
-  button.stop:hover { background:#b91c1c; }
+  h1 {
+    font-size:1.5rem; font-weight:700;
+    display:flex; align-items:center; gap:10px; margin-bottom:4px;
+    background: linear-gradient(135deg,#93c5fd,#3b82f6);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .sub { color:#7d96b3; margin-bottom:18px; font-size:.85rem; }
 
-  .status { margin-left:auto; display:flex; align-items:center; gap:8px; font-size:.85rem; }
-  .dot { width:10px; height:10px; border-radius:50%; background:#ef4444; }
-  .dot.on { background:#22c55e; box-shadow:0 0 10px #22c55e; }
-  .dot.load { background:#eab308; animation:pulse 1s infinite; }
-  @keyframes pulse { 50%{ opacity:.4; } }
+  .viewfinder {
+    position:relative; width:100%; aspect-ratio:4/3;
+    background:#000; border-radius:18px; overflow:hidden;
+    border:2px solid rgba(59,130,246,0.3);
+  }
+  video, canvas {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    object-fit:cover; display:block;
+  }
+  video { z-index:1; }
+  canvas { z-index:2; }
 
-  .log { margin-top:14px; background:#0f172a; border:1px solid #1e3a5f;
-    border-radius:10px; padding:10px 14px; font-family:monospace;
-    font-size:.75rem; color:#7dd3fc; max-height:100px; overflow:auto; white-space:pre-wrap; }
+  /* Lật gương khi dùng camera trước */
+  video.mirrored, canvas.mirrored { transform: scaleX(-1); }
 
-  .slider { display:flex; align-items:center; gap:8px; background:#1e293b;
-    padding:8px 16px; border-radius:40px; font-size:.85rem; }
+  .flash {
+    position:absolute; inset:0; background:#fff; opacity:0;
+    z-index:10; pointer-events:none; transition:opacity .1s;
+  }
+  .flash.on { opacity:0.9; }
+
+  /* Nút chuyển camera nổi trên viewfinder */
+  .flip-cam {
+    position:absolute; top:14px; right:14px; z-index:15;
+    width:48px; height:48px; border-radius:50%;
+    background: rgba(15,23,42,0.75);
+    border: 1.5px solid rgba(96,165,250,0.6);
+    color:white; font-size:1.3rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter: blur(8px);
+    transition: all .2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .flip-cam:hover {
+    background: rgba(37,99,235,0.9);
+    transform: rotate(180deg) scale(1.1);
+  }
+  .flip-cam:active { transform: rotate(180deg) scale(0.95); }
+  .flip-cam:disabled { opacity:.4; cursor:not-allowed; }
+
+  .shutter-wrap { display:flex; justify-content:center; margin-top:22px; }
+  .shutter {
+    width:80px; height:80px; border-radius:50%;
+    background: white; border: 5px solid rgba(59,130,246,0.6);
+    cursor:pointer; position:relative; transition: all .15s;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.15), 0 10px 25px -8px #1e3a5f;
+  }
+  .shutter::after {
+    content:''; position:absolute; inset:8px;
+    border-radius:50%; background:#3b82f6; transition: all .15s;
+  }
+  .shutter:hover::after { background:#2563eb; }
+  .shutter:active { transform: scale(0.92); }
+  .shutter:disabled { opacity:.4; cursor:not-allowed; }
+
+  .bar { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;
+    align-items:center; justify-content:center; }
+  button.btn {
+    background:#1e293b; color:#cbd5e1; border:1px solid #334155;
+    padding:10px 20px; border-radius:40px; font-size:.9rem; cursor:pointer;
+    font-weight:500; transition:.2s;
+  }
+  button.btn:hover:not(:disabled){ background:#334155; color:white; }
+  button.btn.primary{ background:linear-gradient(145deg,#2563eb,#1d4ed8);
+    color:white; border-color:#60a5fa; }
+  button.btn.danger{ background:#7f1d1d; border-color:#dc2626; color:#fecaca; }
+  button.btn:disabled { opacity:.4; cursor:not-allowed; }
+
+  .slider {
+    display:flex; align-items:center; gap:10px;
+    background:#1e293b; padding:8px 16px; border-radius:40px;
+    font-size:.85rem; color:#cbd5e1;
+  }
   input[type=range] { accent-color:#3b82f6; width:100px; }
+
+  .status {
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    margin-top:14px; font-size:.85rem; color:#94a3b8;
+  }
+  .dot { width:9px; height:9px; border-radius:50%; background:#ef4444; transition:.3s; }
+  .dot.on { background:#22c55e; box-shadow:0 0 12px #22c55e; }
+  .dot.scan { background:#3b82f6; animation:pulse 0.6s infinite; }
+  @keyframes pulse { 50%{ opacity:.3; } }
+
+  .result {
+    margin-top:16px; background:rgba(0,0,0,0.4);
+    border:1px solid #1e3a5f; border-radius:12px;
+    padding:10px 14px; font-size:.85rem; color:#7dd3fc;
+    font-family:monospace;
+  }
 </style>
 </head>
 <body>
 <div class="app">
-  <h1>📷 Camera AI - Quét vật thể</h1>
-  <div class="sub">Nhận diện 80 loại vật thể: người, chó, mèo, điện thoại, cốc, bàn, ghế, xe...</div>
+  <h1>📷 Chụp - Vẽ Khung Vật Thể</h1>
+  <div class="sub">Không cần tải model · Chuyển camera trước/sau</div>
 
-  <div class="wrapper">
+  <div class="viewfinder">
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
+    <button class="flip-cam" id="flipCam" title="Chuyển camera" style="display:none;">🔄</button>
+    <div class="flash" id="flash"></div>
+  </div>
+
+  <div class="shutter-wrap">
+    <button class="shutter" id="shutter" disabled></button>
   </div>
 
   <div class="bar">
-    <button id="startBtn" disabled>⏳ Đang tải AI...</button>
-    <button id="stopBtn" class="stop" disabled>⏹ Dừng</button>
+    <button class="btn primary" id="cameraBtn">📹 Bật Camera</button>
+    <button class="btn" id="retakeBtn" style="display:none;">🔄 Chụp lại</button>
+    <button class="btn danger" id="stopBtn" style="display:none;">⏹ Dừng</button>
     <div class="slider">
-      <span>Ngưỡng:</span>
-      <input type="range" id="slider" min="0.1" max="0.9" step="0.05" value="0.4">
-      <span id="sliderVal">40%</span>
-    </div>
-    <div class="status">
-      <span class="dot load" id="dot"></span>
-      <span id="statusText">Đang tải model...</span>
+      <span>Độ nhạy:</span>
+      <input type="range" id="sens" min="10" max="100" step="5" value="50">
+      <span id="sensVal">50</span>
     </div>
   </div>
 
-  <div class="log" id="log">Khởi động...</div>
-</div>
+  <div class="status">
+    <span class="dot" id="dot"></span>
+    <span id="statusText">Bấm "Bật Camera"</span>
+  </div>
 
-<!-- TF.js + COCO-SSD: hai script này load model tự động -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <div class="result" id="result">Sẵn sàng</div>
+</div>
 
 <script>
 (function(){
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
-  const startBtn = document.getElementById('startBtn');
+  const flash = document.getElementById('flash');
+  const shutter = document.getElementById('shutter');
+  const cameraBtn = document.getElementById('cameraBtn');
+  const retakeBtn = document.getElementById('retakeBtn');
   const stopBtn = document.getElementById('stopBtn');
+  const flipCam = document.getElementById('flipCam');
   const dot = document.getElementById('dot');
   const statusText = document.getElementById('statusText');
-  const logEl = document.getElementById('log');
-  const slider = document.getElementById('slider');
-  const sliderVal = document.getElementById('sliderVal');
+  const resultEl = document.getElementById('result');
+  const sensSlider = document.getElementById('sens');
+  const sensVal = document.getElementById('sensVal');
 
-  let stream = null, model = null, modelReady = false;
-  let isRunning = false, isDetecting = false, timer = null;
-  let threshold = 0.4, frame = 0;
+  let stream = null, isCameraOn = false, isFrozen = false;
+  let sensitivity = 50;
+  let snappedCanvas = null;
+  let facingMode = 'environment'; // 'environment' = sau, 'user' = trước
+  let hasMultipleCameras = false;
 
-  function log(msg){
-    const t = new Date().toLocaleTimeString();
-    logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent.split('\n').slice(0,6).join('\n');
+  function setStatus(t, s){
+    statusText.textContent = t;
+    dot.className = 'dot' + (s ? ' ' + s : '');
   }
 
-  slider.addEventListener('input', () => {
-    threshold = parseFloat(slider.value);
-    sliderVal.textContent = Math.round(threshold*100)+'%';
+  // Áp dụng lật gương: chỉ lật khi camera TRƯỚC (selfie)
+  function applyMirror(){
+    const shouldMirror = facingMode === 'user';
+    video.classList.toggle('mirrored', shouldMirror);
+    canvas.classList.toggle('mirrored', shouldMirror);
+  }
+
+  // Kiểm tra có nhiều camera không
+  async function checkCameras(){
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter(d => d.kind === 'videoinput');
+      hasMultipleCameras = cams.length > 1;
+      console.log('Số camera:', cams.length);
+      return cams.length;
+    } catch(e){
+      return 0;
+    }
+  }
+
+  sensSlider.addEventListener('input', () => {
+    sensitivity = parseInt(sensSlider.value);
+    sensVal.textContent = sensitivity;
+    if (isFrozen && snappedCanvas) setTimeout(() => analyze(), 10);
   });
 
-  // Kiểm tra thư viện có load được không
-  function checkLibs(){
-    if (typeof tf === 'undefined') { log('❌ TF.js không tải được - kiểm tra mạng'); return false; }
-    if (typeof cocoSsd === 'undefined') { log('❌ COCO-SSD không tải được - kiểm tra mạng'); return false; }
-    return true;
-  }
-
-  // Tải model
-  async function loadModel(){
-    if (!checkLibs()) {
-      statusText.textContent = 'Lỗi: không tải được thư viện';
-      return;
+  // Hàm mở stream với facingMode chỉ định
+  async function openStream(mode){
+    // Nếu đã có stream cũ → tắt
+    if (stream){
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
     }
-    try {
-      log('Bắt đầu tải model COCO-SSD...');
-      await tf.ready();
-      log('Backend: ' + tf.getBackend());
 
-      model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
-      modelReady = true;
-      startBtn.disabled = false;
-      startBtn.textContent = '▶ Bật Camera';
-      dot.classList.remove('load');
-      statusText.textContent = 'Model sẵn sàng';
-      log('✅ Model đã tải xong');
+    // Thử mở với facingMode cụ thể
+    let constraints = {
+      video: {
+        facingMode: { ideal: mode },
+        width: { ideal: 1024 },
+        height: { ideal: 768 }
+      },
+      audio: false
+    };
+
+    try {
+      return await navigator.mediaDevices.getUserMedia(constraints);
     } catch(e){
-      log('❌ Lỗi model: ' + e.message);
-      statusText.textContent = 'Lỗi tải model';
-    }
-  }
-
-  // Bật camera
-  async function startAll(){
-    try {
-      startBtn.disabled = true;
-      log('Mở camera...');
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+      // Fallback: thử không chỉ định facingMode
+      console.warn('Fallback getUserMedia:', e.message);
+      return await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1024 }, height: { ideal: 768 } },
         audio: false
       });
+    }
+  }
+
+  async function startCamera(){
+    try {
+      cameraBtn.disabled = true;
+      setStatus('Đang mở camera...', 'scan');
+
+      // Kiểm tra số lượng camera trước
+      await checkCameras();
+
+      stream = await openStream(facingMode);
       video.srcObject = stream;
 
       await new Promise(r => {
@@ -157,119 +257,482 @@
 
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      log('📐 ' + video.videoWidth + 'x' + video.videoHeight);
 
-      dot.classList.add('on');
-      statusText.textContent = 'Đang quét...';
-      isRunning = true;
-      stopBtn.disabled = false;
-      loop();
+      // Áp dụng lật gương theo camera hiện tại
+      applyMirror();
+
+      isCameraOn = true;
+      isFrozen = false;
+      setStatus('Sẵn sàng! Bấm nút chụp', 'on');
+      shutter.disabled = false;
+      cameraBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-block';
+      retakeBtn.style.display = 'none';
+
+      // Hiện nút chuyển camera nếu có nhiều hơn 1
+      if (hasMultipleCameras){
+        flipCam.style.display = 'flex';
+      } else {
+        flipCam.style.display = 'none';
+      }
     } catch(e){
-      log('❌ Camera: ' + e.message);
-      statusText.textContent = 'Lỗi camera';
-      startBtn.disabled = false;
-      alert('Không mở được camera: ' + e.message + '\n\nLưu ý: mở file bằng cách nhấp đôi, KHÔNG chạy qua server.');
+      console.error(e);
+      setStatus('❌ Lỗi camera', '');
+      cameraBtn.disabled = false;
+      alert('Lỗi camera: ' + e.message);
+    }
+  }
+
+  // Chuyển camera trước/sau
+  async function switchCamera(){
+    if (!isCameraOn || isFrozen) return;
+    if (flipCam.disabled) return;
+
+    flipCam.disabled = true;
+    setStatus('Đang chuyển camera...', 'scan');
+
+    const oldMode = facingMode;
+    facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+
+    try {
+      stream = await openStream(facingMode);
+      video.srcObject = stream;
+
+      await new Promise(r => {
+        if (video.videoWidth > 0) return r();
+        video.onloadedmetadata = () => r();
+      });
+      await video.play();
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      applyMirror();
+
+      setStatus('Đã chuyển sang camera ' + (facingMode === 'user' ? 'trước' : 'sau'), 'on');
+      setTimeout(() => setStatus('Sẵn sàng! Bấm nút chụp', 'on'), 1500);
+    } catch(e){
+      console.error(e);
+      // Quay lại camera cũ nếu lỗi
+      facingMode = oldMode;
+      setStatus('❌ Không chuyển được camera', '');
+      try {
+        stream = await openStream(facingMode);
+        video.srcObject = stream;
+        await video.play();
+        applyMirror();
+      } catch(e2){}
+    } finally {
+      flipCam.disabled = false;
     }
   }
 
   function stopAll(){
-    isRunning = false; isDetecting = false;
-    if (timer) { clearTimeout(timer); timer = null; }
-    if (stream) stream.getTracks().forEach(t => t.stop());
-    stream = null; video.srcObject = null;
+    if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+    video.srcObject = null;
+    isCameraOn = false; isFrozen = false; snappedCanvas = null;
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    dot.classList.remove('on');
-    statusText.textContent = 'Đã dừng';
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    log('⏹ Đã dừng');
+    setStatus('Đã dừng', '');
+    cameraBtn.style.display = 'inline-block';
+    cameraBtn.disabled = false;
+    stopBtn.style.display = 'none';
+    retakeBtn.style.display = 'none';
+    flipCam.style.display = 'none';
+    shutter.disabled = true;
   }
 
-  async function loop(){
-    if (!isRunning) return;
-    if (isDetecting || !modelReady || video.readyState < 2){
-      timer = setTimeout(loop, 100); return;
+  function capture(){
+    if (!isCameraOn || isFrozen || video.readyState < 2) return;
+    shutter.disabled = true;
+    flash.classList.add('on');
+    setTimeout(() => flash.classList.remove('on'), 120);
+
+    const w = video.videoWidth, h = video.videoHeight;
+
+    // Tạo canvas ẩn lưu ảnh gốc
+    const snap = document.createElement('canvas');
+    snap.width = w; snap.height = h;
+    const sctx = snap.getContext('2d');
+
+    // QUAN TRỌNG: Chỉ lật khi camera TRƯỚC
+    // Để ảnh chụp khớp với những gì đang thấy trên màn hình
+    if (facingMode === 'user'){
+      sctx.save();
+      sctx.translate(w, 0);
+      sctx.scale(-1, 1);
+      sctx.drawImage(video, 0, 0, w, h);
+      sctx.restore();
+    } else {
+      // Camera sau: vẽ thẳng, không lật
+      sctx.drawImage(video, 0, 0, w, h);
     }
-    isDetecting = true;
-    frame++;
 
-    try {
-      const preds = await model.detect(video, 20, threshold);
-      isDetecting = false;
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+    snappedCanvas = snap;
 
-      if (frame % 15 === 0) log(`🎯 Frame ${frame}: ${preds.length} vật thể`);
+    canvas.width = w; canvas.height = h;
+    isFrozen = true;
+    setStatus('🔍 Đang phân tích...', 'scan');
+    resultEl.textContent = 'Đang xử lý...';
 
-      preds.forEach(p => {
-        const [x,y,w,h] = p.bbox;
-        const conf = p.score;
-        const hue = Math.round(120 - conf*90);
-        const color = `hsl(${hue},90%,58%)`;
+    setTimeout(() => {
+      analyze();
+      shutter.disabled = false;
+      retakeBtn.style.display = 'inline-block';
+    }, 50);
+  }
 
-        ctx.save();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(3, canvas.width/350);
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 12;
-        ctx.strokeRect(x,y,w,h);
-        ctx.restore();
+  function analyze(){
+    if (!snappedCanvas) return;
+    const W = snappedCanvas.width, H = snappedCanvas.height;
 
-        const fs = Math.max(15, Math.round(canvas.width/45));
-        ctx.font = `bold ${fs}px 'Segoe UI',sans-serif`;
-        const text = `${p.class} ${Math.round(conf*100)}%`;
-        const tw = ctx.measureText(text).width;
-        const pad = fs*0.5;
-        let ly = y - pad - 4;
-        if (ly < fs) ly = y + h + fs + pad;
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(snappedCanvas, 0, 0, W, H);
 
-        ctx.save();
-        ctx.fillStyle = 'rgba(10,15,25,0.85)';
+    const imgData = ctx.getImageData(0, 0, W, H);
+    const data = imgData.data;
+
+    const SCALE = 3;
+    const sw = Math.floor(W / SCALE);
+    const sh = Math.floor(H / SCALE);
+
+    const borderW = Math.max(4, Math.round(sw * 0.08));
+    const borderH = Math.max(4, Math.round(sh * 0.08));
+
+    function sampleBorder(px1, py1, px2, py2){
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let y = py1; y < py2; y++){
+        for (let x = px1; x < px2; x++){
+          const sx = x * SCALE, sy = y * SCALE;
+          const i = (sy * W + sx) * 4;
+          r += data[i]; g += data[i+1]; b += data[i+2];
+          n++;
+        }
+      }
+      return [r/n, g/n, b/n];
+    }
+    const bgSamples = [
+      sampleBorder(0, 0, sw, borderH),
+      sampleBorder(0, sh-borderH, sw, sh),
+      sampleBorder(0, 0, borderW, sh),
+      sampleBorder(sw-borderW, 0, sw, sh)
+    ];
+
+    const isFg = new Uint8Array(sw * sh);
+    const threshold = 20 + (sensitivity - 10) * (120 / 90);
+
+    for (let y = 0; y < sh; y++){
+      for (let x = 0; x < sw; x++){
+        const sx = x * SCALE, sy = y * SCALE;
+        const i = (sy * W + sx) * 4;
+        const r = data[i], g = data[i+1], b = data[i+2];
+        let minDist = 1e9;
+        for (const bg of bgSamples){
+          const dr = r - bg[0], dg = g - bg[1], db = b - bg[2];
+          const d = Math.sqrt(dr*dr + dg*dg + db*db);
+          if (d < minDist) minDist = d;
+        }
+        isFg[y*sw + x] = minDist > threshold ? 1 : 0;
+      }
+    }
+
+    const cleaned = morphClean(isFg, sw, sh, 2);
+    const blobs = connectedComponents(cleaned, sw, sh, SCALE, W, H);
+
+    const minAreaPx = sw * sh * 0.5 / 100;
+    const maxAreaPx = sw * sh * 85 / 100;
+    let boxes = blobs.filter(b => b.area >= minAreaPx && b.area <= maxAreaPx);
+
+    boxes = mergeBoxes(boxes, 0.08, 15);
+    boxes.sort((a,b) => b.area - a.area);
+    boxes = boxes.slice(0, 30);
+
+    drawBoxes(boxes, W, H);
+
+    setStatus('✅ Vẽ ' + boxes.length + ' khung', boxes.length ? 'on' : '');
+    resultEl.textContent = 'Vẽ ' + boxes.length + ' khung · Độ nhạy ' + sensitivity +
+      ' · Camera ' + (facingMode === 'user' ? 'trước' : 'sau');
+  }
+
+  function morphClean(mask, w, h, r){
+    const d = new Uint8Array(w*h);
+    for (let y = 0; y < h; y++){
+      for (let x = 0; x < w; x++){
+        let on = 0;
+        for (let dy = -r; dy <= r && !on; dy++){
+          for (let dx = -r; dx <= r; dx++){
+            const ny = y+dy, nx = x+dx;
+            if (ny >= 0 && ny < h && nx >= 0 && nx < w && mask[ny*w + nx]){ on = 1; break; }
+          }
+        }
+        d[y*w + x] = on;
+      }
+    }
+    const e = new Uint8Array(w*h);
+    for (let y = 0; y < h; y++){
+      for (let x = 0; x < w; x++){
+        let all = 1;
+        for (let dy = -r; dy <= r && all; dy++){
+          for (let dx = -r; dx <= r; dx++){
+            const ny = y+dy, nx = x+dx;
+            if (ny < 0 || ny >= h || nx < 0 || nx >= w || !d[ny*w + nx]){ all = 0; break; }
+          }
+        }
+        e[y*w + x] = all;
+      }
+    }
+    return e;
+  }
+
+  function connectedComponents(mask, sw, sh, SCALE, W, H){
+    const labels = new Int32Array(sw*sh).fill(-1);
+    const boxes = [];
+    const stack = [];
+
+    for (let y = 0; y < sh; y++){
+      for (let x = 0; x < sw; x++){
+        const idx = y*sw + x;
+        if (labels[idx] === -1 && mask[idx]){
+          let minX = x, maxX = x, minY = y, maxY = y, count = 0;
+          stack.length = 0;
+          stack.push(idx);
+          labels[idx] = 0;
+
+          while (stack.length){
+            const cur = stack.pop();
+            const cy = Math.floor(cur / sw);
+            const cx = cur - cy * sw;
+            count++;
+            if (cx < minX) minX = cx;
+            if (cx > maxX) maxX = cx;
+            if (cy < minY) minY = cy;
+            if (cy > maxY) maxY = cy;
+
+            for (let dy = -1; dy <= 1; dy++){
+              for (let dx = -1; dx <= 1; dx++){
+                if (dy === 0 && dx === 0) continue;
+                const ny = cy+dy, nx = cx+dx;
+                if (ny < 0 || ny >= sh || nx < 0 || nx >= sw) continue;
+                const ni = ny*sw + nx;
+                if (labels[ni] === -1 && mask[ni]){
+                  labels[ni] = 0;
+                  stack.push(ni);
+                }
+              }
+            }
+          }
+
+          const bw = maxX - minX + 1;
+          const bh = maxY - minY + 1;
+          const fill = count / (bw * bh);
+          if (fill < 0.25) continue;
+          const aspect = Math.max(bw, bh) / Math.min(bw, bh);
+          if (aspect > 12) continue;
+
+          boxes.push({
+            x: minX * SCALE,
+            y: minY * SCALE,
+            w: bw * SCALE,
+            h: bh * SCALE,
+            area: count,
+            fill
+          });
+        }
+      }
+    }
+    return boxes;
+  }
+
+  function mergeBoxes(boxes, overlapRatio, gapPx){
+    const result = [];
+    const used = new Array(boxes.length).fill(false);
+
+    for (let i = 0; i < boxes.length; i++){
+      if (used[i]) continue;
+      let cur = { ...boxes[i] };
+      used[i] = true;
+      let changed = true;
+      while (changed){
+        changed = false;
+        for (let j = 0; j < boxes.length; j++){
+          if (used[j]) continue;
+          if (shouldMerge(cur, boxes[j], overlapRatio, gapPx)){
+            cur = unionBox(cur, boxes[j]);
+            used[j] = true;
+            changed = true;
+          }
+        }
+      }
+      result.push(cur);
+    }
+    return result;
+  }
+
+  function shouldMerge(a, b, ratio, gapPx){
+    const ax2 = a.x + a.w, ay2 = a.y + a.h;
+    const bx2 = b.x + b.w, by2 = b.y + b.h;
+    const ix = Math.max(0, Math.min(ax2, bx2) - Math.max(a.x, b.x));
+    const iy = Math.max(0, Math.min(ay2, by2) - Math.max(a.y, b.y));
+    const inter = ix * iy;
+    if (inter === 0){
+      const gapX = Math.max(0, Math.max(a.x, b.x) - Math.min(ax2, bx2));
+      const gapY = Math.max(0, Math.max(a.y, b.y) - Math.min(ay2, by2));
+      const gap = Math.sqrt(gapX*gapX + gapY*gapY);
+      return gap < gapPx;
+    }
+    const minArea = Math.min(a.w*a.h, b.w*b.h);
+    return inter / minArea > ratio;
+  }
+
+  function unionBox(a, b){
+    const x = Math.min(a.x, b.x);
+    const y = Math.min(a.y, b.y);
+    const x2 = Math.max(a.x + a.w, b.x + b.w);
+    const y2 = Math.max(a.y + a.h, b.y + b.h);
+    return { x, y, w: x2-x, h: y2-y, area: a.area + b.area, fill: 1 };
+  }
+
+  function drawBoxes(boxes, W, H){
+    boxes.forEach((b, i) => {
+      const { x, y, w, h } = b;
+      const hue = (i * 47) % 360;
+      const color = `hsl(${hue}, 95%, 60%)`;
+
+      // Sợi carbon bên trong
+      ctx.save();
+      ctx.beginPath();
+      roundRectPath(ctx, x, y, w, h, 10);
+      ctx.clip();
+
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      const step = 14;
+      for (let k = -h; k < w + h; k += step){
         ctx.beginPath();
-        ctx.roundRect(x, ly-fs, tw+pad*2, fs+pad, 8);
-        ctx.fill();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
+        ctx.moveTo(x + k, y);
+        ctx.lineTo(x + k - h, y + h);
         ctx.stroke();
-        ctx.restore();
+      }
+      ctx.globalAlpha = 0.2;
+      for (let k = -h; k < w + h; k += step){
+        ctx.beginPath();
+        ctx.moveTo(x + k, y);
+        ctx.lineTo(x + k + h, y + h);
+        ctx.stroke();
+      }
+      ctx.restore();
 
-        ctx.save();
-        ctx.fillStyle = '#fff';
-        ctx.fillText(text, x+pad, ly-pad/2);
-        ctx.restore();
-      });
+      // Glow
+      ctx.save();
+      ctx.strokeStyle = `hsla(${hue}, 95%, 60%, 0.7)`;
+      ctx.lineWidth = Math.max(8, W/180);
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 25;
+      ctx.globalAlpha = 0.5;
+      roundRectPath(ctx, x, y, w, h, 10);
+      ctx.stroke();
+      ctx.restore();
 
-      timer = setTimeout(loop, 80);
-    } catch(e){
-      isDetecting = false;
-      log('❌ Detect: ' + e.message);
-      timer = setTimeout(loop, 500);
-    }
+      // Viền
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(3, W/380);
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
+      ctx.shadowBlur = 6;
+      roundRectPath(ctx, x, y, w, h, 10);
+      ctx.stroke();
+      ctx.restore();
+
+      // 4 góc
+      const cl = Math.min(w, h) * 0.22;
+      const cw = Math.max(4, W/260);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = cw;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.moveTo(x, y+cl); ctx.lineTo(x, y); ctx.lineTo(x+cl, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+w-cl, y); ctx.lineTo(x+w, y); ctx.lineTo(x+w, y+cl); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y+h-cl); ctx.lineTo(x, y+h); ctx.lineTo(x+cl, y+h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+w-cl, y+h); ctx.lineTo(x+w, y+h); ctx.lineTo(x+w, y+h-cl); ctx.stroke();
+      ctx.restore();
+
+      // Nhãn
+      const num = '#' + (i+1);
+      const fs = Math.max(14, Math.round(W/55));
+      ctx.font = `700 ${fs}px 'Segoe UI', sans-serif`;
+      const tw = ctx.measureText(num).width;
+      const pad = fs * 0.5;
+      const bh = fs + pad;
+      const bw = tw + pad * 2;
+
+      let lx = x, ly = y - bh - 4;
+      if (ly < 4) ly = y + h + 4;
+      if (lx + bw > W - 4) lx = W - bw - 4;
+      if (lx < 4) lx = 4;
+
+      ctx.save();
+      const g = ctx.createLinearGradient(lx, ly, lx+bw, ly+bh);
+      g.addColorStop(0, color);
+      g.addColorStop(1, `hsl(${hue}, 80%, 42%)`);
+      ctx.fillStyle = g;
+      ctx.shadowColor = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 2;
+      roundRectPath(ctx, lx, ly, bw, bh, 6);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = 'white';
+      ctx.font = `700 ${fs}px 'Segoe UI', sans-serif`;
+      ctx.fillText(num, lx + pad, ly + bh - pad*0.9);
+      ctx.restore();
+    });
   }
 
-  // Polyfill roundRect
-  if (!CanvasRenderingContext2D.prototype.roundRect){
-    CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
-      if (w<2*r) r=w/2; if (h<2*r) r=h/2;
-      this.moveTo(x+r,y); this.lineTo(x+w-r,y);
-      this.quadraticCurveTo(x+w,y,x+w,y+r);
-      this.lineTo(x+w,y+h-r);
-      this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-      this.lineTo(x+r,y+h);
-      this.quadraticCurveTo(x,y+h,x,y+h-r);
-      this.lineTo(x,y+r);
-      this.quadraticCurveTo(x,y,x+r,y);
-      return this;
-    };
+  function roundRectPath(c, x, y, w, h, r){
+    if (w < 2*r) r = w/2;
+    if (h < 2*r) r = h/2;
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
   }
 
-  startBtn.addEventListener('click', startAll);
+  cameraBtn.addEventListener('click', startCamera);
+  shutter.addEventListener('click', capture);
   stopBtn.addEventListener('click', stopAll);
-  window.addEventListener('beforeunload', () => {
-    if (stream) stream.getTracks().forEach(t => t.stop());
-    if (timer) clearTimeout(timer);
+  flipCam.addEventListener('click', switchCamera);
+  retakeBtn.addEventListener('click', () => {
+    isFrozen = false; snappedCanvas = null;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    retakeBtn.style.display = 'none';
+    shutter.disabled = false;
+    setStatus('Sẵn sàng! Bấm nút chụp', 'on');
   });
 
-  loadModel();
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !shutter.disabled && isCameraOn && !isFrozen){
+      e.preventDefault(); capture();
+    }
+    // Phím F để chuyển camera
+    if (e.code === 'KeyF' && isCameraOn && !isFrozen && flipCam.style.display !== 'none'){
+      e.preventDefault(); switchCamera();
+    }
+  });
+
+  window.addEventListener('beforeunload', () => {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+  });
 })();
 </script>
 </body>
