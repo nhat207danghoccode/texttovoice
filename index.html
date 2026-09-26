@@ -1,166 +1,393 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Piper TTS Tiếng Việt</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Camera AI – Fix vẽ khung</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ml5/1.0.1/ml5.min.js"></script>
 <style>
-*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#f5f7fb;color:#172033}
-.wrap{max-width:760px;margin:auto;padding:20px 15px 40px} .card{background:#fff;border:1px solid #e4e8f0;border-radius:20px;padding:18px;box-shadow:0 8px 30px rgba(20,30,60,.07)}
-h1{margin:0 0 5px;font-size:24px} .sub{margin:0 0 18px;color:#687386}
-.drop{border:2px dashed #cbd4e3;border-radius:15px;padding:18px;text-align:center;background:#fafbfe}
-input[type=file]{width:100%} textarea{width:100%;height:180px;resize:vertical;border:1px solid #d6dce7;border-radius:13px;padding:14px;font-size:17px;line-height:1.5;outline:none}
-select{width:100%;padding:11px;border:1px solid #d6dce7;border-radius:11px;background:#fff} label{display:block;font-weight:600;margin:15px 0 7px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px} button{border:0;border-radius:11px;padding:12px 16px;font-weight:700;cursor:pointer}
-.primary{background:#315efb;color:#fff} .secondary{background:#eef1f6} .buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}
-.status{margin-top:14px;padding:11px 13px;border-radius:11px;background:#f1f4f9;color:#5e6878;font-size:14px;white-space:pre-wrap}
-audio{width:100%;margin-top:14px} .small{font-size:12px;color:#7b8493;margin-top:8px;line-height:1.45}
-@media(max-width:560px){.row{grid-template-columns:1fr}}
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Roboto,sans-serif; }
+  body {
+    min-height:100vh;
+    background: radial-gradient(circle at 30% 10%, #1e2a3a, #0b0f14 80%);
+    display:flex; align-items:center; justify-content:center;
+    color:#e8f0fe; padding:20px;
+  }
+  .app {
+    width:100%; max-width:1100px;
+    background: rgba(18,26,36,0.75);
+    backdrop-filter: blur(12px);
+    border-radius:32px;
+    border:1px solid rgba(100,180,255,0.25);
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+    padding:28px;
+  }
+  h1 {
+    font-size:1.9rem; font-weight:600;
+    display:flex; align-items:center; gap:12px;
+    margin-bottom:6px;
+    background: linear-gradient(135deg,#a0d0ff,#6ea8fe);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .sub { color:#9bb5d4; margin-bottom:20px; border-left:3px solid #3b82f6; padding-left:14px; font-size:.9rem; }
+
+  .camera-wrapper {
+    position:relative; width:100%; border-radius:24px; overflow:hidden;
+    background:#0a0e12; aspect-ratio:4/3;
+    box-shadow: 0 15px 30px -10px black, 0 0 0 1px rgba(59,130,246,0.3);
+  }
+  video, canvas {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    object-fit:cover;
+  }
+  video { transform: scaleX(-1); z-index:1; }
+  canvas { transform: scaleX(-1); z-index:2; pointer-events:none; }
+
+  .controls {
+    margin-top:20px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+    background: rgba(10,20,30,0.6); border-radius:60px; padding:12px 20px;
+    border:1px solid rgba(70,130,200,0.3);
+  }
+  button {
+    background: rgba(30,50,75,0.7);
+    border:1px solid rgba(90,150,240,0.4);
+    color:#c6dfff; padding:10px 22px; border-radius:40px;
+    font-size:.9rem; font-weight:500; cursor:pointer;
+    transition: all .2s;
+    display:flex; align-items:center; gap:8px;
+  }
+  button:hover { background:#2a4a6e; border-color:#5b9aff; transform:translateY(-2px); }
+  button.primary {
+    background: linear-gradient(145deg,#2563eb,#1d4ed8);
+    border-color:#93c5fd; color:white;
+    box-shadow: 0 0 18px #3b82f6aa;
+  }
+  button.danger { background: linear-gradient(145deg,#dc2626,#b91c1c); border-color:#fca5a5; color:white; }
+  button:disabled { opacity:.4; pointer-events:none; }
+
+  .status { margin-left:auto; display:flex; align-items:center; gap:8px; font-size:.85rem; color:#9fc9ff; }
+  .dot { width:10px; height:10px; border-radius:50%; background:#ef4444; box-shadow:0 0 10px #ef4444; }
+  .dot.on { background:#22c55e; box-shadow:0 0 12px #22c55e; }
+
+  .debug {
+    margin-top:12px; background:rgba(0,0,0,0.4); padding:12px 18px;
+    border-radius:14px; font-family:monospace; font-size:.8rem;
+    color:#7dd3fc; border:1px solid #1e3a5f;
+    max-height:120px; overflow:auto; white-space:pre-wrap;
+  }
+
+  .confidence-slider {
+    display:flex; align-items:center; gap:10px;
+    background:rgba(30,50,75,0.5); padding:8px 18px; border-radius:40px;
+    border:1px solid rgba(90,150,240,0.3); font-size:.85rem;
+  }
+  input[type=range] {
+    width:120px; accent-color:#3b82f6;
+  }
 </style>
 </head>
 <body>
-<div class="wrap"><div class="card">
-<h1>🇻🇳 Piper TTS</h1>
-<p class="sub">Chỉ cần chọn file <b>.onnx</b>. Cấu hình tiếng Việt đã được tích hợp sẵn.</p>
+<div class="app">
+  <h1>📷 Camera AI – Fix vẽ khung</h1>
+  <div class="sub">Bản đã sửa lỗi không vẽ khung · Debug realtime · Điều chỉnh ngưỡng</div>
 
-<div class="drop">
-  <b>Model Piper</b><br><br>
-  <input id="modelFile" type="file" accept=".onnx,application/octet-stream">
-  <div id="fileName" class="small">Chưa chọn model.</div>
-</div>
-
-<label for="text">Văn bản</label>
-<textarea id="text" placeholder="Nhập văn bản tiếng Việt...">Xin chào! Đây là Piper TTS tiếng Việt.</textarea>
-
-<div class="row">
-  <div>
-    <label for="speaker">Speaker</label>
-    <select id="speaker"></select>
+  <div class="camera-wrapper">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="overlayCanvas"></canvas>
   </div>
-  <div>
-    <label for="length">Tốc độ</label>
-    <select id="length">
-      <option value="0.75">Nhanh</option>
-      <option value="0.9">Hơi nhanh</option>
-      <option value="1" selected>Bình thường</option>
-      <option value="1.15">Hơi chậm</option>
-      <option value="1.3">Chậm</option>
-    </select>
+
+  <div class="controls">
+    <button id="startBtn" class="primary">▶ Bật Camera & AI</button>
+    <button id="stopBtn" class="danger" disabled>⏹ Dừng</button>
+    <div class="confidence-slider">
+      <span>Ngưỡng:</span>
+      <input type="range" id="confSlider" min="0.1" max="0.9" step="0.05" value="0.4">
+      <span id="confValue">40%</span>
+    </div>
+    <div class="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Chưa kết nối</span>
+    </div>
   </div>
+
+  <div class="debug" id="debug">Sẵn sàng...</div>
 </div>
 
-<div class="buttons">
-  <button class="primary" id="speak">▶ Tạo giọng nói</button>
-  <button class="secondary" id="stop">■ Dừng</button>
-  <button class="secondary" id="download" disabled>⬇ Tải WAV</button>
-</div>
+<script>
+(function(){
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('overlayCanvas');
+  const ctx = canvas.getContext('2d');
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const debug = document.getElementById('debug');
+  const confSlider = document.getElementById('confSlider');
+  const confValue = document.getElementById('confValue');
 
-<div id="status" class="status">Chưa tải model.</div>
-<audio id="audio" controls></audio>
-<div class="small">Model chạy cục bộ trong trình duyệt. File ONNX không được tải lên server.</div>
-</div></div>
+  let stream = null;
+  let detector = null;
+  let modelReady = false;
+  let isRunning = false;
+  let isDetecting = false;   // chống gọi detect chồng
+  let confThreshold = 0.4;
+  let detectCount = 0;
 
-<script type="module">
-import * as ort from "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/+esm";
-import { createPiperPhonemize } from "./piper.js";
+  function log(msg) {
+    const time = new Date().toLocaleTimeString();
+    debug.textContent = `[${time}] ${msg}\n` + debug.textContent.split('\n').slice(0, 8).join('\n');
+  }
 
-const CONFIG = {"audio": {"sample_rate": 16000, "quality": "x_low"}, "espeak": {"voice": "vi"}, "inference": {"noise_scale": 0.667, "length_scale": 1, "noise_w": 0.8}, "num_speakers": 65, "speaker_id_map": {"VIVOSSPK13": 0, "VIVOSSPK14": 1, "VIVOSSPK15": 2, "VIVOSSPK16": 3, "VIVOSSPK17": 4, "VIVOSSPK18": 5, "VIVOSSPK19": 6, "VIVOSSPK20": 7, "VIVOSSPK21": 8, "VIVOSSPK22": 9, "VIVOSSPK26": 10, "VIVOSSPK34": 11, "VIVOSSPK40": 12, "VIVOSSPK41": 13, "VIVOSSPK42": 14, "VIVOSSPK43": 15, "VIVOSSPK44": 16, "VIVOSSPK45": 17, "VIVOSSPK46": 18, "VIVOSSPK38": 19, "VIVOSSPK31": 20, "VIVOSSPK35": 21, "VIVOSSPK01": 22, "VIVOSSPK02": 23, "VIVOSSPK03": 24, "VIVOSSPK04": 25, "VIVOSSPK05": 26, "VIVOSSPK06": 27, "VIVOSSPK07": 28, "VIVOSSPK08": 29, "VIVOSSPK09": 30, "VIVOSSPK10": 31, "VIVOSSPK11": 32, "VIVOSSPK12": 33, "VIVOSSPK27": 34, "VIVOSSPK36": 35, "VIVOSSPK33": 36, "VIVOSSPK32": 37, "VIVOSSPK29": 38, "VIVOSSPK39": 39, "VIVOSSPK25": 40, "VIVOSSPK28": 41, "VIVOSSPK30": 42, "VIVOSSPK37": 43, "VIVOSSPK23": 44, "VIVOSSPK24": 45, "VIVOSDEV02": 46, "VIVOSDEV03": 47, "VIVOSDEV01": 48, "VIVOSDEV04": 49, "VIVOSDEV05": 50, "VIVOSDEV06": 51, "VIVOSDEV07": 52, "VIVOSDEV08": 53, "VIVOSDEV09": 54, "VIVOSDEV10": 55, "VIVOSDEV11": 56, "VIVOSDEV12": 57, "VIVOSDEV13": 58, "VIVOSDEV14": 59, "VIVOSDEV15": 60, "VIVOSDEV16": 61, "VIVOSDEV17": 62, "VIVOSDEV18": 63, "VIVOSDEV19": 64}};
-const ONNX_WASM_BASE = "https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.18.0/";
-const PIPER_WASM = "https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/piper_phonemize.wasm";
-const PIPER_DATA = "https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/piper_phonemize.data";
-
-const $ = id => document.getElementById(id);
-const status = $("status");
-const speaker = $("speaker");
-let session = null, currentUrl = null, lastBlob = null, busy = false;
-
-for (const [name,id] of Object.entries(CONFIG.speaker_id_map)) {
-  const o=document.createElement("option"); o.value=id; o.textContent=`${name} (#${id})`; speaker.appendChild(o);
-}
-speaker.value = "0";
-
-$("modelFile").addEventListener("change", e => {
-  const f=e.target.files[0];
-  $("fileName").textContent=f ? `${f.name} — ${(f.size/1024/1024).toFixed(1)} MB` : "Chưa chọn model.";
-  session=null; lastBlob=null; $("download").disabled=true;
-  status.textContent=f ? "Đã chọn model. Bấm Tạo giọng nói." : "Chưa tải model.";
-});
-
-function pcmToWav(pcm, sampleRate) {
-  const buffer=new ArrayBuffer(44+pcm.length*2), view=new DataView(buffer);
-  const write=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};
-  write(0,"RIFF"); view.setUint32(4,36+pcm.length*2,true); write(8,"WAVE");
-  write(12,"fmt "); view.setUint32(16,16,true); view.setUint16(20,1,true);
-  view.setUint16(22,1,true); view.setUint32(24,sampleRate,true); view.setUint32(28,sampleRate*2,true);
-  view.setUint16(32,2,true); view.setUint16(34,16,true); write(36,"data");
-  view.setUint32(40,pcm.length*2,true);
-  let p=44; for(let i=0;i<pcm.length;i++){let x=Math.max(-1,Math.min(1,pcm[i]));view.setInt16(p,x<0?x*32768:x*32767,true);p+=2}
-  return new Blob([buffer],{type:"audio/wav"});
-}
-
-async function makeSession(modelBytes) {
-  ort.env.allowLocalModels=false;
-  ort.env.wasm.numThreads=Math.max(1, Math.min(4, navigator.hardwareConcurrency||2));
-  ort.env.wasm.wasmPaths=ONNX_WASM_BASE;
-  status.textContent="Đang mở model ONNX...";
-  const s=await ort.InferenceSession.create(modelBytes, {
-    executionProviders:["wasm"],
-    graphOptimizationLevel:"all"
+  // Cập nhật ngưỡng
+  confSlider.addEventListener('input', () => {
+    confThreshold = parseFloat(confSlider.value);
+    confValue.textContent = Math.round(confThreshold * 100) + '%';
   });
-  return s;
-}
 
-async function phonemize(text) {
-  return await new Promise(async (resolve,reject)=>{
+  // Khởi tạo model
+  function initModel() {
+    return new Promise((resolve, reject) => {
+      if (modelReady) return resolve();
+      log('Đang tải model COCO-SSD...');
+      statusText.textContent = 'Đang tải model...';
+      try {
+        detector = ml5.objectDetector('cocossd', () => {
+          modelReady = true;
+          log('✅ Model COCO-SSD đã sẵn sàng');
+          statusText.textContent = 'Model sẵn sàng';
+          resolve();
+        });
+      } catch (e) {
+        log('❌ Lỗi tải model: ' + e.message);
+        reject(e);
+      }
+    });
+  }
+
+  // Bật camera
+  async function startAll() {
     try {
-      const module=await createPiperPhonemize({
-        print:data=>{try{resolve(JSON.parse(data).phoneme_ids)}catch(e){reject(e)}},
-        printErr:msg=>console.warn("phonemizer:",msg),
-        locateFile:url=>url.endsWith(".wasm")?PIPER_WASM:url.endsWith(".data")?PIPER_DATA:url
+      startBtn.disabled = true;
+      statusText.textContent = 'Đang mở camera...';
+      log('Yêu cầu quyền camera...');
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
       });
-      module.callMain(["-l",CONFIG.espeak.voice,"--input",JSON.stringify([{text:text.trim()}]),"--espeak_data","/espeak-ng-data"]);
-    } catch(e) { reject(e); }
-  });
-}
 
-$("speak").onclick=async()=>{
-  if(busy)return;
-  const file=$("modelFile").files[0], text=$("text").value.trim();
-  if(!file){status.textContent="❌ Hãy chọn file .onnx trước.";return}
-  if(!text){status.textContent="❌ Hãy nhập văn bản.";return}
-  busy=true; $("speak").disabled=true;
-  try {
-    if(!session) session=await makeSession(await file.arrayBuffer());
-    status.textContent="Đang chuyển tiếng Việt thành phoneme...";
-    const ids=await phonemize(text);
-    if(!ids?.length)throw new Error("Không tạo được phoneme từ văn bản.");
-    const sid=Number(speaker.value);
-    const feeds={
-      input:new ort.Tensor("int64",BigInt64Array.from(ids.map(Number)),[1,ids.length]),
-      input_lengths:new ort.Tensor("int64",BigInt64Array.from([ids.length]),[1]),
-      scales:new ort.Tensor("float32",Float32Array.from([CONFIG.inference.noise_scale,Number($("length").value),CONFIG.inference.noise_w]),[3]),
-      sid:new ort.Tensor("int64",BigInt64Array.from([sid]),[1])
+      video.srcObject = stream;
+
+      // Đợi video thực sự play và có metadata
+      await new Promise((resolve) => {
+        if (video.readyState >= 2 && video.videoWidth > 0) return resolve();
+        const onReady = () => {
+          if (video.videoWidth > 0) {
+            video.removeEventListener('loadedmetadata', onReady);
+            video.removeEventListener('playing', onReady);
+            resolve();
+          }
+        };
+        video.addEventListener('loadedmetadata', onReady);
+        video.addEventListener('playing', onReady);
+      });
+
+      await video.play().catch(() => {});
+
+      // ✅ QUAN TRỌNG: set canvas bằng ĐÚNG kích thước video
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      log(`📐 Video: ${video.videoWidth}x${video.videoHeight} | Canvas: ${canvas.width}x${canvas.height}`);
+
+      statusDot.classList.add('on');
+      statusText.textContent = 'Camera đã bật';
+      log('✅ Camera đã bật');
+
+      // Load model
+      await initModel();
+
+      // Bắt đầu vòng lặp
+      isRunning = true;
+      stopBtn.disabled = false;
+      statusText.textContent = 'Đang nhận diện';
+      detectLoop();
+
+    } catch (err) {
+      console.error(err);
+      log('❌ Lỗi: ' + err.message);
+      statusText.textContent = 'Lỗi: ' + err.message;
+      startBtn.disabled = false;
+      alert('Lỗi: ' + err.message + '\n\nKiểm tra quyền camera và chạy trên https hoặc localhost.');
+    }
+  }
+
+  // Dừng
+  function stopAll() {
+    isRunning = false;
+    isDetecting = false;
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+    video.srcObject = null;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    statusDot.classList.remove('on');
+    statusText.textContent = 'Đã dừng';
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    log('⏹ Đã dừng');
+  }
+
+  // Vòng lặp detect với cơ chế chống chồng
+  function detectLoop() {
+    if (!isRunning) return;
+
+    // Nếu detector đang bận → bỏ qua frame này, thử lại ở frame sau
+    if (isDetecting) {
+      requestAnimationFrame(detectLoop);
+      return;
+    }
+
+    if (!modelReady || !detector) {
+      requestAnimationFrame(detectLoop);
+      return;
+    }
+
+    if (video.readyState < 2 || video.videoWidth === 0) {
+      requestAnimationFrame(detectLoop);
+      return;
+    }
+
+    // Đảm bảo canvas khớp video
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      log(`📐 Cập nhật canvas: ${canvas.width}x${canvas.height}`);
+    }
+
+    isDetecting = true;
+    detectCount++;
+
+    detector.detect(video, (err, results) => {
+      isDetecting = false;
+
+      if (err) {
+        log('❌ Detect lỗi: ' + err.message);
+        requestAnimationFrame(detectLoop);
+        return;
+      }
+
+      // ✅ Xóa canvas mỗi frame
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const validResults = (results || []).filter(r => r.confidence >= confThreshold);
+
+      // Log mỗi 30 frame để không spam
+      if (detectCount % 30 === 0) {
+        log(`🎯 Frame #${detectCount}: ${validResults.length}/${(results||[]).length} vật thể (ngưỡng ${Math.round(confThreshold*100)}%)`);
+      }
+
+      if (validResults.length > 0) {
+        drawBoxes(validResults);
+      } else if (results && results.length > 0 && detectCount % 30 === 0) {
+        // Có vật thể nhưng dưới ngưỡng
+        const top = results.reduce((a,b) => a.confidence > b.confidence ? a : b);
+        log(`⚠ Chỉ có "${top.label}" ${Math.round(top.confidence*100)}% (dưới ngưỡng)`);
+      }
+
+      // Tiếp tục frame sau (không dùng requestAnimationFrame liên tục để nhường CPU)
+      setTimeout(() => requestAnimationFrame(detectLoop), 60);
+    });
+  }
+
+  // Vẽ khung — LƯU Ý: model trả tọa độ theo video gốc (chưa lật).
+  // Vì cả video và canvas đều bị CSS scaleX(-1), nên tọa độ vẽ thẳng là ĐÚNG.
+  function drawBoxes(detections) {
+    const scaleX = canvas.width / video.videoWidth;
+    const scaleY = canvas.height / video.videoHeight;
+
+    detections.forEach((det) => {
+      const x = det.x * scaleX;
+      const y = det.y * scaleY;
+      const w = det.width * scaleX;
+      const h = det.height * scaleY;
+
+      const conf = det.confidence;
+      const hue = Math.round(120 - conf * 60); // đỏ -> vàng -> xanh
+      const color = `hsl(${hue}, 90%, 58%)`;
+
+      // Khung
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(3, canvas.width / 350);
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 15;
+      ctx.strokeRect(x, y, w, h);
+      ctx.restore();
+
+      // Nhãn
+      const fontSize = Math.max(16, Math.round(canvas.width / 40));
+      ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
+      const text = `${det.label} ${Math.round(conf*100)}%`;
+      const tw = ctx.measureText(text).width;
+      const pad = fontSize * 0.5;
+
+      let labelY = y - pad - 4;
+      if (labelY < fontSize) labelY = y + h + fontSize + pad; // nếu sát trên thì xuống dưới
+
+      // Nền nhãn
+      ctx.save();
+      ctx.fillStyle = 'rgba(10,15,25,0.85)';
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(x, labelY - fontSize, tw + pad*2, fontSize + pad, 8);
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      // Chữ
+      ctx.save();
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(text, x + pad, labelY - pad/2);
+      ctx.restore();
+    });
+  }
+
+  // Helper roundRect
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
     };
-    status.textContent="Đang tổng hợp giọng nói...";
-    const out=await session.run(feeds);
-    const pcm=out.output.data;
-    lastBlob=pcmToWav(pcm,CONFIG.audio.sample_rate);
-    if(currentUrl)URL.revokeObjectURL(currentUrl);
-    currentUrl=URL.createObjectURL(lastBlob);
-    $("audio").src=currentUrl; $("download").disabled=false;
-    status.textContent=`✅ Hoàn tất — speaker ${sid}.`;
-    await $("audio").play().catch(()=>{});
-  } catch(e) {
-    console.error(e);
-    status.textContent="❌ Lỗi: "+(e?.message||e);
-  } finally {busy=false;$("speak").disabled=false}
-};
+  }
 
-$("stop").onclick=()=>{$("audio").pause();$("audio").currentTime=0;status.textContent="Đã dừng."};
-$("download").onclick=()=>{
-  if(!lastBlob)return;
-  const a=document.createElement("a");a.href=currentUrl;a.download="piper-vietnamese.wav";a.click();
-};
+  startBtn.addEventListener('click', startAll);
+  stopBtn.addEventListener('click', stopAll);
+
+  window.addEventListener('beforeunload', () => {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+  });
+})();
 </script>
 </body>
 </html>
