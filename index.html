@@ -3,8 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Camera AI – Fix vẽ khung</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ml5/1.0.1/ml5.min.js"></script>
+<title>Camera AI – Quét mọi vật thể</title>
+<script type="module">
+  // Transformers.js load qua ESM — ổn định hơn ml5 rất nhiều
+  import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+  window.__pipeline = pipeline;
+  window.__env = env;
+  window.dispatchEvent(new Event('transformers-ready'));
+</script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Roboto,sans-serif; }
   body {
@@ -56,7 +62,7 @@
     transition: all .2s;
     display:flex; align-items:center; gap:8px;
   }
-  button:hover { background:#2a4a6e; border-color:#5b9aff; transform:translateY(-2px); }
+  button:hover:not(:disabled) { background:#2a4a6e; border-color:#5b9aff; transform:translateY(-2px); }
   button.primary {
     background: linear-gradient(145deg,#2563eb,#1d4ed8);
     border-color:#93c5fd; color:white;
@@ -66,328 +72,370 @@
   button:disabled { opacity:.4; pointer-events:none; }
 
   .status { margin-left:auto; display:flex; align-items:center; gap:8px; font-size:.85rem; color:#9fc9ff; }
-  .dot { width:10px; height:10px; border-radius:50%; background:#ef4444; box-shadow:0 0 10px #ef4444; }
+  .dot { width:10px; height:10px; border-radius:50%; background:#ef4444; box-shadow:0 0 10px #ef4444; transition:.3s; }
   .dot.on { background:#22c55e; box-shadow:0 0 12px #22c55e; }
+  .dot.loading { background:#eab308; box-shadow:0 0 12px #eab308; animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity:.4; } }
+
+  .slider-wrap {
+    display:flex; align-items:center; gap:10px;
+    background:rgba(30,50,75,0.5); padding:8px 18px; border-radius:40px;
+    border:1px solid rgba(90,150,240,0.3); font-size:.85rem;
+  }
+  input[type=range] { width:130px; accent-color:#3b82f6; }
 
   .debug {
     margin-top:12px; background:rgba(0,0,0,0.4); padding:12px 18px;
     border-radius:14px; font-family:monospace; font-size:.8rem;
     color:#7dd3fc; border:1px solid #1e3a5f;
-    max-height:120px; overflow:auto; white-space:pre-wrap;
+    max-height:130px; overflow:auto; white-space:pre-wrap;
   }
 
-  .confidence-slider {
-    display:flex; align-items:center; gap:10px;
-    background:rgba(30,50,75,0.5); padding:8px 18px; border-radius:40px;
-    border:1px solid rgba(90,150,240,0.3); font-size:.85rem;
+  .progress {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    z-index:5; text-align:center; color:#93c5fd; font-size:1rem;
+    background: rgba(10,15,25,0.85); padding:20px 40px; border-radius:20px;
+    border:1px solid #3b82f6; display:none;
   }
-  input[type=range] {
-    width:120px; accent-color:#3b82f6;
+  .progress.show { display:block; }
+  .spinner {
+    width:40px; height:40px; border:4px solid #1e3a5f; border-top-color:#3b82f6;
+    border-radius:50%; animation: spin 0.8s linear infinite; margin:0 auto 12px;
   }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 <div class="app">
-  <h1>📷 Camera AI – Fix vẽ khung</h1>
-  <div class="sub">Bản đã sửa lỗi không vẽ khung · Debug realtime · Điều chỉnh ngưỡng</div>
+  <h1>📷 Camera AI – Quét mọi vật thể</h1>
+  <div class="sub">DETR · Nhận diện mọi thứ trong khung · Không cần train · Vẽ khung chính xác</div>
 
   <div class="camera-wrapper">
     <video id="video" autoplay playsinline muted></video>
     <canvas id="overlayCanvas"></canvas>
+    <div class="progress" id="progress">
+      <div class="spinner"></div>
+      <div id="progressText">Đang tải AI...</div>
+    </div>
   </div>
 
   <div class="controls">
-    <button id="startBtn" class="primary">▶ Bật Camera & AI</button>
+    <button id="startBtn" class="primary" disabled>⏳ Đang tải model...</button>
     <button id="stopBtn" class="danger" disabled>⏹ Dừng</button>
-    <div class="confidence-slider">
+    <div class="slider-wrap">
       <span>Ngưỡng:</span>
-      <input type="range" id="confSlider" min="0.1" max="0.9" step="0.05" value="0.4">
-      <span id="confValue">40%</span>
+      <input type="range" id="confSlider" min="0.1" max="0.9" step="0.05" value="0.5">
+      <span id="confValue">50%</span>
     </div>
     <div class="status">
-      <span class="dot" id="statusDot"></span>
-      <span id="statusText">Chưa kết nối</span>
+      <span class="dot loading" id="statusDot"></span>
+      <span id="statusText">Đang tải...</span>
     </div>
   </div>
 
-  <div class="debug" id="debug">Sẵn sàng...</div>
+  <div class="debug" id="debug">Khởi động...</div>
 </div>
 
-<script>
-(function(){
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('overlayCanvas');
-  const ctx = canvas.getContext('2d');
-  const startBtn = document.getElementById('startBtn');
-  const stopBtn = document.getElementById('stopBtn');
-  const statusDot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
-  const debug = document.getElementById('debug');
-  const confSlider = document.getElementById('confSlider');
-  const confValue = document.getElementById('confValue');
+<script type="module">
+// Đợi transformers-ready
+await new Promise(resolve => {
+  if (window.__pipeline) return resolve();
+  window.addEventListener('transformers-ready', resolve, { once: true });
+});
 
-  let stream = null;
-  let detector = null;
-  let modelReady = false;
-  let isRunning = false;
-  let isDetecting = false;   // chống gọi detect chồng
-  let confThreshold = 0.4;
-  let detectCount = 0;
+const { pipeline, env } = window;
+// Tắt warning, dùng WASM backend
+env.allowLocalModels = false;
+env.useBrowserCache = true;
 
-  function log(msg) {
-    const time = new Date().toLocaleTimeString();
-    debug.textContent = `[${time}] ${msg}\n` + debug.textContent.split('\n').slice(0, 8).join('\n');
-  }
+// ===== DOM =====
+const video = document.getElementById('video');
+const canvas = document.getElementById('overlayCanvas');
+const ctx = canvas.getContext('2d');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const debugEl = document.getElementById('debug');
+const progress = document.getElementById('progress');
+const progressText = document.getElementById('progressText');
+const confSlider = document.getElementById('confSlider');
+const confValue = document.getElementById('confValue');
 
-  // Cập nhật ngưỡng
-  confSlider.addEventListener('input', () => {
-    confThreshold = parseFloat(confSlider.value);
-    confValue.textContent = Math.round(confThreshold * 100) + '%';
-  });
+// ===== State =====
+let stream = null;
+let detector = null;
+let modelReady = false;
+let isRunning = false;
+let isDetecting = false;
+let confThreshold = 0.5;
+let frameCount = 0;
+let lastResultCount = 0;
 
-  // Khởi tạo model
-  function initModel() {
-    return new Promise((resolve, reject) => {
-      if (modelReady) return resolve();
-      log('Đang tải model COCO-SSD...');
-      statusText.textContent = 'Đang tải model...';
-      try {
-        detector = ml5.objectDetector('cocossd', () => {
-          modelReady = true;
-          log('✅ Model COCO-SSD đã sẵn sàng');
-          statusText.textContent = 'Model sẵn sàng';
-          resolve();
-        });
-      } catch (e) {
-        log('❌ Lỗi tải model: ' + e.message);
-        reject(e);
-      }
-    });
-  }
+function log(msg) {
+  const t = new Date().toLocaleTimeString();
+  debugEl.textContent = `[${t}] ${msg}\n` + debugEl.textContent.split('\n').slice(0, 8).join('\n');
+}
 
-  // Bật camera
-  async function startAll() {
-    try {
-      startBtn.disabled = true;
-      statusText.textContent = 'Đang mở camera...';
-      log('Yêu cầu quyền camera...');
+confSlider.addEventListener('input', () => {
+  confThreshold = parseFloat(confSlider.value);
+  confValue.textContent = Math.round(confThreshold * 100) + '%';
+});
 
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
+// ===== Load model DETR (nhận diện 91 loại vật thể + nhiều biến thể) =====
+async function loadModel() {
+  try {
+    progress.classList.add('show');
+    progressText.textContent = 'Đang tải model AI (~40MB, lần đầu hơi lâu)...';
+    statusText.textContent = 'Đang tải model...';
+    log('Bắt đầu tải DETR...');
 
-      video.srcObject = stream;
-
-      // Đợi video thực sự play và có metadata
-      await new Promise((resolve) => {
-        if (video.readyState >= 2 && video.videoWidth > 0) return resolve();
-        const onReady = () => {
-          if (video.videoWidth > 0) {
-            video.removeEventListener('loadedmetadata', onReady);
-            video.removeEventListener('playing', onReady);
-            resolve();
+    detector = await pipeline(
+      'object-detection',
+      'Xenova/detr-resnet-50',
+      {
+        quantized: true, // giảm size
+        progress_callback: (p) => {
+          if (p.status === 'progress' && p.file) {
+            const pct = p.progress ? Math.round(p.progress) : 0;
+            progressText.textContent = `Đang tải ${p.file}: ${pct}%`;
           }
-        };
-        video.addEventListener('loadedmetadata', onReady);
-        video.addEventListener('playing', onReady);
-      });
+        }
+      }
+    );
 
-      await video.play().catch(() => {});
-
-      // ✅ QUAN TRỌNG: set canvas bằng ĐÚNG kích thước video
-      canvas.width = video.videoWidth || 1280;
-      canvas.height = video.videoHeight || 720;
-      log(`📐 Video: ${video.videoWidth}x${video.videoHeight} | Canvas: ${canvas.width}x${canvas.height}`);
-
-      statusDot.classList.add('on');
-      statusText.textContent = 'Camera đã bật';
-      log('✅ Camera đã bật');
-
-      // Load model
-      await initModel();
-
-      // Bắt đầu vòng lặp
-      isRunning = true;
-      stopBtn.disabled = false;
-      statusText.textContent = 'Đang nhận diện';
-      detectLoop();
-
-    } catch (err) {
-      console.error(err);
-      log('❌ Lỗi: ' + err.message);
-      statusText.textContent = 'Lỗi: ' + err.message;
-      startBtn.disabled = false;
-      alert('Lỗi: ' + err.message + '\n\nKiểm tra quyền camera và chạy trên https hoặc localhost.');
-    }
-  }
-
-  // Dừng
-  function stopAll() {
-    isRunning = false;
-    isDetecting = false;
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-    video.srcObject = null;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    statusDot.classList.remove('on');
-    statusText.textContent = 'Đã dừng';
+    modelReady = true;
+    progress.classList.remove('show');
     startBtn.disabled = false;
-    stopBtn.disabled = true;
-    log('⏹ Đã dừng');
+    startBtn.innerHTML = '▶ Bật Camera & AI';
+    statusDot.classList.remove('loading');
+    statusText.textContent = 'Model sẵn sàng';
+    log('✅ DETR model đã sẵn sàng');
+  } catch (e) {
+    console.error(e);
+    progressText.textContent = 'Lỗi tải model: ' + e.message;
+    statusText.textContent = 'Lỗi tải model';
+    log('❌ ' + e.message);
+    setTimeout(() => progress.classList.remove('show'), 3000);
   }
+}
 
-  // Vòng lặp detect với cơ chế chống chồng
-  function detectLoop() {
-    if (!isRunning) return;
+// ===== Bật camera =====
+async function startAll() {
+  try {
+    startBtn.disabled = true;
+    statusText.textContent = 'Đang mở camera...';
+    log('Yêu cầu camera...');
 
-    // Nếu detector đang bận → bỏ qua frame này, thử lại ở frame sau
-    if (isDetecting) {
-      requestAnimationFrame(detectLoop);
-      return;
-    }
-
-    if (!modelReady || !detector) {
-      requestAnimationFrame(detectLoop);
-      return;
-    }
-
-    if (video.readyState < 2 || video.videoWidth === 0) {
-      requestAnimationFrame(detectLoop);
-      return;
-    }
-
-    // Đảm bảo canvas khớp video
-    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      log(`📐 Cập nhật canvas: ${canvas.width}x${canvas.height}`);
-    }
-
-    isDetecting = true;
-    detectCount++;
-
-    detector.detect(video, (err, results) => {
-      isDetecting = false;
-
-      if (err) {
-        log('❌ Detect lỗi: ' + err.message);
-        requestAnimationFrame(detectLoop);
-        return;
-      }
-
-      // ✅ Xóa canvas mỗi frame
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const validResults = (results || []).filter(r => r.confidence >= confThreshold);
-
-      // Log mỗi 30 frame để không spam
-      if (detectCount % 30 === 0) {
-        log(`🎯 Frame #${detectCount}: ${validResults.length}/${(results||[]).length} vật thể (ngưỡng ${Math.round(confThreshold*100)}%)`);
-      }
-
-      if (validResults.length > 0) {
-        drawBoxes(validResults);
-      } else if (results && results.length > 0 && detectCount % 30 === 0) {
-        // Có vật thể nhưng dưới ngưỡng
-        const top = results.reduce((a,b) => a.confidence > b.confidence ? a : b);
-        log(`⚠ Chỉ có "${top.label}" ${Math.round(top.confidence*100)}% (dưới ngưỡng)`);
-      }
-
-      // Tiếp tục frame sau (không dùng requestAnimationFrame liên tục để nhường CPU)
-      setTimeout(() => requestAnimationFrame(detectLoop), 60);
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
     });
-  }
 
-  // Vẽ khung — LƯU Ý: model trả tọa độ theo video gốc (chưa lật).
-  // Vì cả video và canvas đều bị CSS scaleX(-1), nên tọa độ vẽ thẳng là ĐÚNG.
-  function drawBoxes(detections) {
-    const scaleX = canvas.width / video.videoWidth;
-    const scaleY = canvas.height / video.videoHeight;
+    video.srcObject = stream;
 
-    detections.forEach((det) => {
-      const x = det.x * scaleX;
-      const y = det.y * scaleY;
-      const w = det.width * scaleX;
-      const h = det.height * scaleY;
-
-      const conf = det.confidence;
-      const hue = Math.round(120 - conf * 60); // đỏ -> vàng -> xanh
-      const color = `hsl(${hue}, 90%, 58%)`;
-
-      // Khung
-      ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = Math.max(3, canvas.width / 350);
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 15;
-      ctx.strokeRect(x, y, w, h);
-      ctx.restore();
-
-      // Nhãn
-      const fontSize = Math.max(16, Math.round(canvas.width / 40));
-      ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
-      const text = `${det.label} ${Math.round(conf*100)}%`;
-      const tw = ctx.measureText(text).width;
-      const pad = fontSize * 0.5;
-
-      let labelY = y - pad - 4;
-      if (labelY < fontSize) labelY = y + h + fontSize + pad; // nếu sát trên thì xuống dưới
-
-      // Nền nhãn
-      ctx.save();
-      ctx.fillStyle = 'rgba(10,15,25,0.85)';
-      ctx.shadowColor = 'rgba(0,0,0,0.9)';
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.roundRect(x, labelY - fontSize, tw + pad*2, fontSize + pad, 8);
-      ctx.fill();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.restore();
-
-      // Chữ
-      ctx.save();
-      ctx.fillStyle = '#fff';
-      ctx.shadowColor = 'rgba(0,0,0,0.9)';
-      ctx.shadowBlur = 4;
-      ctx.fillText(text, x + pad, labelY - pad/2);
-      ctx.restore();
+    await new Promise(resolve => {
+      if (video.readyState >= 2 && video.videoWidth > 0) return resolve();
+      const onReady = () => {
+        if (video.videoWidth > 0) {
+          video.removeEventListener('loadedmetadata', onReady);
+          video.removeEventListener('playing', onReady);
+          resolve();
+        }
+      };
+      video.addEventListener('loadedmetadata', onReady);
+      video.addEventListener('playing', onReady);
     });
+
+    await video.play().catch(() => {});
+
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    log(`📐 Video ${video.videoWidth}x${video.videoHeight}`);
+
+    statusDot.classList.add('on');
+    statusText.textContent = 'Đang quét...';
+    isRunning = true;
+    stopBtn.disabled = false;
+    log('✅ Camera bật, bắt đầu quét');
+
+    detectLoop();
+  } catch (e) {
+    console.error(e);
+    log('❌ ' + e.message);
+    statusText.textContent = 'Lỗi camera';
+    startBtn.disabled = false;
+    alert('Lỗi camera: ' + e.message + '\nChạy trên https hoặc localhost.');
+  }
+}
+
+function stopAll() {
+  isRunning = false;
+  isDetecting = false;
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  video.srcObject = null;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  statusDot.classList.remove('on');
+  statusText.textContent = 'Đã dừng';
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  log('⏹ Đã dừng');
+}
+
+// ===== Vòng lặp detect =====
+async function detectLoop() {
+  if (!isRunning) return;
+  if (isDetecting) {
+    requestAnimationFrame(detectLoop);
+    return;
+  }
+  if (!modelReady || !detector) {
+    requestAnimationFrame(detectLoop);
+    return;
+  }
+  if (video.readyState < 2 || video.videoWidth === 0) {
+    requestAnimationFrame(detectLoop);
+    return;
   }
 
-  // Helper roundRect
-  if (!CanvasRenderingContext2D.prototype.roundRect) {
-    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-      if (w < 2*r) r = w/2;
-      if (h < 2*r) r = h/2;
-      this.moveTo(x+r, y);
-      this.lineTo(x+w-r, y);
-      this.quadraticCurveTo(x+w, y, x+w, y+r);
-      this.lineTo(x+w, y+h-r);
-      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-      this.lineTo(x+r, y+h);
-      this.quadraticCurveTo(x, y+h, x, y+h-r);
-      this.lineTo(x, y+r);
-      this.quadraticCurveTo(x, y, x+r, y);
-      return this;
-    };
+  if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
   }
 
-  startBtn.addEventListener('click', startAll);
-  stopBtn.addEventListener('click', stopAll);
+  isDetecting = true;
+  frameCount++;
 
-  window.addEventListener('beforeunload', () => {
-    if (stream) stream.getTracks().forEach(t => t.stop());
+  try {
+    // Transformers.js nhận URL, base64 hoặc raw image. Dùng canvas để tránh lật gương
+    const tmp = document.createElement('canvas');
+    tmp.width = video.videoWidth;
+    tmp.height = video.videoHeight;
+    const tctx = tmp.getContext('2d');
+    // Vẽ LẬT GƯƠNG để model thấy đúng như người dùng thấy
+    tctx.save();
+    tctx.translate(tmp.width, 0);
+    tctx.scale(-1, 1);
+    tctx.drawImage(video, 0, 0);
+    tctx.restore();
+
+    const results = await detector(tmp.toDataURL('image/jpeg', 0.7));
+
+    isDetecting = false;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const valid = (results || []).filter(r => r.score >= confThreshold);
+    lastResultCount = valid.length;
+
+    if (frameCount % 15 === 0) {
+      log(`🎯 Frame #${frameCount}: ${valid.length}/${(results||[]).length} vật thể`);
+    }
+
+    if (valid.length > 0) {
+      drawBoxes(valid);
+    }
+
+    // Chờ chút để nhường CPU
+    setTimeout(() => requestAnimationFrame(detectLoop), 100);
+  } catch (e) {
+    isDetecting = false;
+    log('❌ Detect lỗi: ' + e.message);
+    setTimeout(() => requestAnimationFrame(detectLoop), 500);
+  }
+}
+
+// ===== Vẽ khung =====
+function drawBoxes(detections) {
+  // Model nhận ảnh đã lật gương, nên tọa độ khớp với canvas đã lật gương
+  const W = canvas.width;
+  const H = canvas.height;
+
+  detections.forEach((det) => {
+    const { box, label, score } = det;
+    // box: {xmin, ymin, xmax, ymax} theo pixel của ảnh input
+    const x = box.xmin;
+    const y = box.ymin;
+    const w = box.xmax - box.xmin;
+    const h = box.ymax - box.ymin;
+
+    const hue = Math.round(120 - score * 90); // score cao → xanh, thấp → đỏ
+    const color = `hsl(${hue}, 90%, 58%)`;
+
+    // Khung
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(3, W / 350);
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 15;
+    ctx.strokeRect(x, y, w, h);
+    ctx.restore();
+
+    // Nhãn
+    const fontSize = Math.max(15, Math.round(W / 45));
+    ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
+    const text = `${label} ${Math.round(score * 100)}%`;
+    const tw = ctx.measureText(text).width;
+    const pad = fontSize * 0.5;
+
+    let labelY = y - pad - 4;
+    if (labelY < fontSize) labelY = y + h + fontSize + pad;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(10,15,25,0.85)';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.roundRect(x, labelY - fontSize, tw + pad*2, fontSize + pad, 8);
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(text, x + pad, labelY - pad/2);
+    ctx.restore();
   });
-})();
+}
+
+// Polyfill roundRect
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (w < 2*r) r = w/2;
+    if (h < 2*r) r = h/2;
+    this.moveTo(x+r, y);
+    this.lineTo(x+w-r, y);
+    this.quadraticCurveTo(x+w, y, x+w, y+r);
+    this.lineTo(x+w, y+h-r);
+    this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    this.lineTo(x+r, y+h);
+    this.quadraticCurveTo(x, y+h, x, y+h-r);
+    this.lineTo(x, y+r);
+    this.quadraticCurveTo(x, y, x+r, y);
+    return this;
+  };
+}
+
+startBtn.addEventListener('click', startAll);
+stopBtn.addEventListener('click', stopAll);
+
+window.addEventListener('beforeunload', () => {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+});
+
+// Bắt đầu load model ngay
+loadModel();
 </script>
 </body>
 </html>
