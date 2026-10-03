@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>xKiro AI Client — Auto Model</title>
+<title>xKiro AI Client — Full Features (Premium Models)</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   :root{
@@ -44,6 +44,7 @@
   .info-box{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px}
   .info-box .k{color:var(--muted)}.info-box .v{color:var(--text);font-family:ui-monospace,monospace;word-break:break-all}
   .info-box .v.free{color:var(--green);font-weight:600}
+  .info-box .v.premium{color:var(--yellow);font-weight:600}
   .log{background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:8px;
     font-size:11px;font-family:ui-monospace,monospace;max-height:170px;overflow-y:auto;color:var(--muted);line-height:1.55}
   .log .ok{color:var(--green)}.log .fail{color:var(--red)}.log .info{color:var(--accent)}.log .warn{color:var(--yellow)}
@@ -78,7 +79,7 @@
   .input-area button{padding:11px 18px}
   .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;text-transform:uppercase}
   .badge.free{background:rgba(34,197,94,.15);color:var(--green)}
-  .badge.paid{background:rgba(245,158,11,.15);color:var(--yellow)}
+  .badge.premium{background:rgba(245,158,11,.15);color:var(--yellow)}
   ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
   ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
@@ -87,7 +88,7 @@
 <body>
 
 <header>
-  <div class="logo">⚡ xKiro AI Client</div>
+  <div class="logo">⚡ xKiro AI Client — Premium</div>
   <div id="statusBadge" class="badge-status warn">
     <span class="dot"></span><span id="statusText">Chưa kết nối</span>
   </div>
@@ -98,12 +99,11 @@
     <div class="field">
       <label>Base URL</label>
       <input id="baseUrl" value="https://api.xkiro.com/v1" />
-      <small>Giống <code>baseURL</code> trong OpenAI SDK</small>
     </div>
     <div class="field">
       <label>API Key</label>
       <input type="password" id="apiKey" placeholder="xk-... hoặc sk-..." />
-      <small>Lưu cục bộ trong localStorage</small>
+      <small>Key lưu cục bộ trong localStorage</small>
     </div>
     <div class="field">
       <label>Auth Header</label>
@@ -113,17 +113,49 @@
       </select>
     </div>
 
-    <button id="scanBtn">🔍 Quét & tự chọn model free</button>
+    <!-- KHÔNG QUÉT: chọn model trực tiếp từ danh sách premium -->
+    <div class="field">
+      <label>Model (Premium)</label>
+      <select id="modelSelect">
+        <option value="openai/gpt-6-astra">openai/gpt-6-astra — $10/$50</option>
+        <option value="openai/gpt-5.6-sol">openai/gpt-5.6-sol — $5/$30</option>
+        <option value="openai/gpt-5.6-luna">openai/gpt-5.6-luna — $0.10/$0.60</option>
+        <option value="openai/gpt-5.6-terra">openai/gpt-5.6-terra — $1/$6</option>
+        <option value="anthropic/claude-fable-5-1">anthropic/claude-fable-5-1 — $10/$50</option>
+        <option value="anthropic/claude-fable-5">anthropic/claude-fable-5 — $10/$50</option>
+        <option value="anthropic/claude-opus-5">anthropic/claude-opus-5 — $5/$25</option>
+        <option value="anthropic/claude-opus-4.8">anthropic/claude-opus-4.8 — $5/$25</option>
+        <option value="anthropic/claude-sonnet-5">anthropic/claude-sonnet-5 — $2/$10</option>
+        <option value="google/gemini-3.8-flash">google/gemini-3.8-flash — $0.75/$3.75</option>
+        <option value="google/gemini-3.6-flash">google/gemini-3.6-flash — $1.50/$7.50</option>
+        <option value="x-ai/grok-4.6">x-ai/grok-4.6 — $1.30/$3.90</option>
+        <option value="x-ai/grok-4.5">x-ai/grok-4.5 — $1.30/$3.90</option>
+        <option value="x-ai/grok-build-0.1">x-ai/grok-build-0.1 — $0.65/$1.30</option>
+        <option value="z-ai/glm-5.3">z-ai/glm-5.3 — $1.40/$4.40</option>
+        <option value="z-ai/glm-5.2">z-ai/glm-5.2 — $1.40/$4.40</option>
+        <option value="z-ai/glm-5.3-flash">z-ai/glm-5.3-flash — $0.15/$0.50</option>
+        <option value="moonshotai/kimi-k3">moonshotai/kimi-k3 — $3/$15</option>
+        <option value="moonshotai/kimi-k2.7-code">moonshotai/kimi-k2.7-code — $0.46/$2.28</option>
+        <option value="qwen/qwen3.8-max">qwen/qwen3.8-max — $2/$6</option>
+        <option value="qwen/qwen3.7-max">qwen/qwen3.7-max — $1.48/...</option>
+        <option value="minimax/minimax-m3">minimax/minimax-m3 — $0.30/$1.20</option>
+        <option value="tencent/hy4-preview">tencent/hy4-preview — $0.54/$1.63</option>
+        <option value="tencent/hy3">tencent/hy3 — $0.08/$0.33</option>
+        <option value="deepseek/deepseek-v4.1-flash">deepseek/deepseek-v4.1-flash — $0.08/$0.30</option>
+      </select>
+      <small>Model có phí — yêu cầu key trả phí hoặc Pro</small>
+    </div>
 
-    <div class="info-box" id="modelInfo" style="display:none">
-      <div><span class="k">Model:</span> <span class="v free" id="selModel">—</span></div>
-      <div style="margin-top:4px"><span class="k">Free models:</span> <span class="v" id="freeCount">0</span></div>
-      <div><span class="k">Tổng models:</span> <span class="v" id="totalCount">0</span></div>
+    <button id="testBtn">🧪 Test key (qua /usage)</button>
+
+    <div class="info-box" id="modelInfo">
+      <div><span class="k">Model đang chọn:</span> <span class="v premium" id="selModel">openai/gpt-6-astra</span></div>
+      <div style="margin-top:4px"><span class="k">Trạng thái:</span> <span id="modelStatus" class="badge premium">premium</span></div>
     </div>
 
     <div class="field">
       <label>Log</label>
-      <div class="log" id="scanLog">Nhấn "Quét" để bắt đầu...</div>
+      <div class="log" id="scanLog">Sẵn sàng. Nhập key và chọn model.</div>
     </div>
 
     <div class="field">
@@ -133,17 +165,15 @@
 
     <div class="row">
       <button class="ghost" id="clearBtn">🗑 Xoá chat</button>
-      <button class="ghost" id="testBtn">🧪 Test key</button>
     </div>
   </aside>
 
   <section class="chat">
     <div class="chat-head">
-      <div class="cm">Model: <b id="headerModel">—</b></div>
-      <select id="modelSelect"><option value="">— Chưa có model —</option></select>
+      <div class="cm">Model: <b id="headerModel">openai/gpt-6-astra</b></div>
     </div>
     <div class="messages" id="messages">
-      <div class="msg system">Nhập API key và nhấn "Quét" để tự động tìm model miễn phí.</div>
+      <div class="msg system">Chọn model premium ở cột trái, nhập API key và bắt đầu chat.</div>
     </div>
     <div class="input-area">
       <textarea id="userInput" placeholder="Nhập tin nhắn... (Enter gửi, Shift+Enter xuống dòng)" rows="1"></textarea>
@@ -158,16 +188,16 @@
 
 const $ = id => document.getElementById(id);
 const baseUrlEl=$('baseUrl'), apiKeyEl=$('apiKey'), authTypeEl=$('authType');
-const scanBtn=$('scanBtn'), testBtn=$('testBtn'), clearBtn=$('clearBtn'), sendBtn=$('sendBtn');
+const testBtn=$('testBtn'), clearBtn=$('clearBtn'), sendBtn=$('sendBtn');
 const userInput=$('userInput'), messagesEl=$('messages'), modelSelect=$('modelSelect');
 const headerModel=$('headerModel'), scanLog=$('scanLog'), statusBadge=$('statusBadge');
 const statusText=$('statusText'), modelInfo=$('modelInfo'), selModel=$('selModel');
-const freeCountEl=$('freeCount'), totalCountEl=$('totalCount'), systemPromptEl=$('systemPrompt');
+const modelStatusEl=$('modelStatus'), systemPromptEl=$('systemPrompt');
 
-const state = { models:[], freeModels:[], selectedModel:'', streaming:false, abort:null, history:[] };
+const state = { selectedModel:'openai/gpt-6-astra', streaming:false, abort:null, history:[] };
 
 /* ---------- persistence ---------- */
-const KEY='xkiro_v1';
+const KEY='xkiro_premium_v1';
 function save(){try{localStorage.setItem(KEY,JSON.stringify({
   baseUrl:baseUrlEl.value, apiKey:apiKeyEl.value, authType:authTypeEl.value,
   selectedModel:state.selectedModel, systemPrompt:systemPromptEl.value
@@ -190,253 +220,4 @@ function clearLog(){scanLog.innerHTML='';}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function renderMarkdown(text){
   let h=escapeHtml(text);
-  h=h.replace(/```(\w*)\n?([\s\S]*?)```/g,(_,l,c)=>'<pre><code>'+c.replace(/\n$/,'')+'</code></pre>');
-  h=h.replace(/`([^`\n]+)`/g,'<code>$1</code>');
-  h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  h=h.replace(/(^|[^*])\*([^*\n]+)\*/g,'$1<em>$2</em>');
-  return h;
-}
-
-/* ---------- auth header (giống OpenAI SDK) ---------- */
-function headers(){
-  const key=apiKeyEl.value.trim();
-  const h={'Content-Type':'application/json'};
-  if(authTypeEl.value==='bearer') h['Authorization']='Bearer '+key;
-  else h['x-api-key']=key;
-  return h;
-}
-
-/* ---------- 1) GET /models ---------- */
-async function fetchModels(){
-  const base=baseUrlEl.value.trim().replace(/\/+$/,'');
-  const url=base+'/models';
-  log('→ GET '+url,'info');
-  const res=await fetch(url,{headers:headers()});
-  log('← HTTP '+res.status,res.ok?'ok':'fail');
-  if(!res.ok){const t=await res.text().catch(()=>'');throw new Error('HTTP '+res.status+' '+t.slice(0,200));}
-  const data=await res.json();
-  if(Array.isArray(data)) return data;
-  if(Array.isArray(data.data)) return data.data;
-  if(Array.isArray(data.models)) return data.models;
-  if(Array.isArray(data.result)) return data.result;
-  return [];
-}
-
-/* ---------- 2) Parse + detect free ---------- */
-function parseEntry(m){
-  if(typeof m==='string') return {id:m,free:true};
-  const id=m.id||m.model||m.name||m.slug||'';
-  let free=true;
-  const priceFields=['price','pricing','input_price','output_price','input','output'];
-  for(const f of priceFields){
-    const v=m[f];
-    if(v===undefined) continue;
-    if(typeof v==='number'){ if(v>0) free=false; }
-    else if(typeof v==='object'&&v){
-      const vals=Object.values(v).map(Number).filter(n=>!isNaN(n));
-      if(vals.some(n=>n>0)) free=false;
-    } else if(typeof v==='string'){ const n=parseFloat(v); if(!isNaN(n)&&n>0) free=false; }
-  }
-  if(m.is_free===false||m.free===false) free=false;
-  if(['premium','paid'].includes(m.tier)||['premium','paid'].includes(m.access)) free=false;
-  return {id,free};
-}
-const FREE_PATTERNS=[/mistralai\//i,/deepseek\//i,/minimax\//i,/qwen/i,/ministral/i,
-  /devstral/i,/codestral/i,/gemma/i,/llama/i,/-free$/i,/:free$/i];
-const heuristicFree = id => FREE_PATTERNS.some(r=>r.test(id));
-
-/* ưu tiên model ổn định, tránh các model hay lỗi 503 */
-const PREFERRED=[/deepseek.*flash/i,/deepseek.*v4/i,/mistral.*small/i,/minimax.*m3/i,
-  /ministral.*8b/i,/deepseek.*v3/i,/deepseek/i,/mistral/i,/minimax/i,/qwen/i];
-function pickBest(list){
-  for(const r of PREFERRED){const f=list.find(m=>r.test(m.id));if(f)return f.id;}
-  return list[0]?list[0].id:'';
-}
-
-/* ---------- 3) Scan ---------- */
-async function scan(){
-  if(state.streaming) return;
-  if(!apiKeyEl.value.trim()){setStatus('err','Thiếu API key');log('✗ Chưa nhập API key','fail');return;}
-  scanBtn.disabled=true;clearLog();setStatus('warn','Đang quét...');
-  log('▶ Bắt đầu quét model list...','info');
-  try{
-    const raw=await fetchModels();
-    log('✓ Nhận '+raw.length+' entries','ok');
-    const parsed=raw.map(parseEntry).filter(m=>m.id);
-    state.models=parsed;
-    let freeList=parsed.filter(m=>m.free);
-    if(!freeList.length){
-      log('! Không có metadata giá → dùng heuristic','warn');
-      freeList=parsed.filter(m=>heuristicFree(m.id));
-    }
-    state.freeModels=freeList;
-    totalCountEl.textContent=parsed.length;
-    freeCountEl.textContent=freeList.length;
-    log('✓ '+freeList.length+' model free','ok');
-
-    // populate select
-    modelSelect.innerHTML='';
-    const freeIds=new Set(freeList.map(m=>m.id));
-    freeList.forEach(m=>{const o=document.createElement('option');o.value=m.id;
-      o.textContent='🆓 '+m.id;modelSelect.appendChild(o);});
-    parsed.filter(m=>!freeIds.has(m.id)).forEach(m=>{const o=document.createElement('option');
-      o.value=m.id;o.textContent='💰 '+m.id;modelSelect.appendChild(o);});
-
-    const best=pickBest(freeList);
-    if(best){
-      state.selectedModel=best;
-      modelSelect.value=best;
-      headerModel.textContent=best;
-      selModel.textContent=best;
-      modelInfo.style.display='block';
-      log('★ Tự động chọn: '+best,'ok');
-    } else log('✗ Không có model free','fail');
-
-    await verifyKey();
-    setStatus('ok','Sẵn sàng ('+freeList.length+' free)');
-    save();
-  }catch(e){
-    console.error(e);setStatus('err','Quét thất bại');log('✗ '+e.message,'fail');
-    log('→ Kiểm tra Base URL / mạng / CORS','warn');
-  }finally{scanBtn.disabled=false;}
-}
-
-/* ---------- 4) Verify key qua /usage ---------- */
-async function verifyKey(){
-  const base=baseUrlEl.value.trim().replace(/\/+$/,'');
-  try{
-    const res=await fetch(base+'/usage',{headers:headers()});
-    if(res.status===401){log('✗ Key không hợp lệ (401)','fail');setStatus('err','Key sai');return false;}
-    if(res.ok){log('✓ Key hợp lệ','ok');
-      const d=await res.json().catch(()=>({}));
-      const used=d.used??d.usage??d.total_used, lim=d.limit??d.quota??d.total_limit;
-      if(used!=null&&lim!=null) log('  Đã dùng: '+used+' / '+lim,'info');
-      return true;
-    }
-    log('? /usage HTTP '+res.status,'warn');return true;
-  }catch(e){log('! Không verify được: '+e.message,'warn');return true;}
-}
-
-/* ---------- 5) Chat (giống client.chat.completions.create) ---------- */
-function addMessage(role,content){
-  const el=document.createElement('div');
-  el.className='msg '+role;
-  if(role==='assistant') el.innerHTML=renderMarkdown(content);
-  else el.textContent=content;
-  messagesEl.appendChild(el);messagesEl.scrollTop=messagesEl.scrollHeight;
-  return el;
-}
-
-async function send(){
-  if(state.streaming){ if(state.abort) state.abort.abort(); return; }
-  const text=userInput.value.trim();
-  if(!text) return;
-  if(!state.selectedModel){addMessage('system','Chưa chọn model. Hãy quét trước.');return;}
-  if(!apiKeyEl.value.trim()){addMessage('system','Chưa nhập API key.');return;}
-
-  userInput.value='';userInput.style.height='auto';
-  addMessage('user',text);
-  state.history.push({role:'user',content:text});
-
-  const assistantEl=addMessage('assistant','');
-  assistantEl.innerHTML='<span class="cursor"></span>';
-  state.streaming=true;sendBtn.textContent='⏹ Dừng';setStatus('warn','Đang trả lời...');
-
-  const base=baseUrlEl.value.trim().replace(/\/+$/,'');
-  const body={
-    model:state.selectedModel,
-    messages:[
-      ...(systemPromptEl.value.trim()?[{role:'system',content:systemPromptEl.value.trim()}]:[]),
-      ...state.history.slice(-20)
-    ],
-    stream:true
-  };
-
-  state.abort=new AbortController();
-  let full='';
-  try{
-    const res=await fetch(base+'/chat/completions',{
-      method:'POST',headers:headers(),body:JSON.stringify(body),signal:state.abort.signal
-    });
-    if(!res.ok){const t=await res.text().catch(()=>'');throw new Error('HTTP '+res.status+' — '+t.slice(0,300));}
-
-    const reader=res.body.getReader();
-    const dec=new TextDecoder();
-    let buf='';
-    while(true){
-      const {done,value}=await reader.read();
-      if(done) break;
-      buf+=dec.decode(value,{stream:true});
-      const lines=buf.split('\n');buf=lines.pop()||'';
-      for(const line of lines){
-        const t=line.trim();
-        if(!t||!t.startsWith('data:')) continue;
-        const p=t.slice(5).trim();
-        if(p==='[DONE]'){buf='';break;}
-        try{
-          const j=JSON.parse(p);
-          const d=j.choices?.[0]?.delta?.content ?? j.choices?.[0]?.message?.content
-                ?? j.delta?.text ?? j.content?.[0]?.text ?? '';
-          if(d){full+=d;assistantEl.innerHTML=renderMarkdown(full)+'<span class="cursor"></span>';
-            messagesEl.scrollTop=messagesEl.scrollHeight;}
-        }catch(e){}
-      }
-    }
-    assistantEl.innerHTML=renderMarkdown(full||'(không có nội dung)');
-    if(full) state.history.push({role:'assistant',content:full});
-    setStatus('ok','Sẵn sàng');
-  }catch(e){
-    if(e.name==='AbortError'){
-      assistantEl.innerHTML=renderMarkdown(full)+'\n\n[đã dừng]';
-      if(full) state.history.push({role:'assistant',content:full});
-      setStatus('ok','Đã dừng');
-    }else{
-      console.error(e);
-      assistantEl.innerHTML='<span style="color:#ef4444">Lỗi: '+escapeHtml(e.message)+'</span>';
-      setStatus('err','Lỗi API');
-    }
-  }finally{
-    state.streaming=false;state.abort=null;sendBtn.textContent='Gửi ➤';userInput.focus();
-  }
-}
-
-/* ---------- events ---------- */
-scanBtn.addEventListener('click',scan);
-testBtn.addEventListener('click',async()=>{
-  if(!apiKeyEl.value.trim()){addMessage('system','Chưa nhập API key.');return;}
-  clearLog();log('▶ Kiểm tra key...','info');setStatus('warn','Đang kiểm tra...');
-  if(await verifyKey()) setStatus('ok','Key hợp lệ');
-});
-clearBtn.addEventListener('click',()=>{
-  if(!confirm('Xoá lịch sử chat?'))return;
-  state.history=[];messagesEl.innerHTML='';addMessage('system','Đã xoá lịch sử.');
-});
-sendBtn.addEventListener('click',send);
-userInput.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}
-});
-userInput.addEventListener('input',()=>{
-  userInput.style.height='auto';
-  userInput.style.height=Math.min(userInput.scrollHeight,200)+'px';
-});
-modelSelect.addEventListener('change',()=>{
-  state.selectedModel=modelSelect.value;
-  headerModel.textContent=state.selectedModel||'—';
-  selModel.textContent=state.selectedModel||'—';
-  save();
-  addMessage('system','Đã chuyển model: '+state.selectedModel);
-});
-
-/* ---------- init ---------- */
-load();
-if(state.selectedModel){
-  headerModel.textContent=state.selectedModel;
-  selModel.textContent=state.selectedModel;
-  modelInfo.style.display='block';
-}
-addMessage('system','Sẵn sàng. Nhập API key rồi nhấn "🔍 Quét & tự chọn model free".');
-
-})();
-</script>
-</body>
-</html>
+  h=h.replace(/```
