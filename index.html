@@ -3,221 +3,664 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>xKiro AI Client — Full Features (Premium Models)</title>
+<title>DEBUG ◈ XKiro Tester</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'JetBrains Mono','Courier New',monospace;}
   :root{
-    --bg:#0a0e1a;--panel:#121829;--panel2:#1a2138;--border:#2a3350;
-    --text:#e6ecff;--muted:#8892b0;--accent:#4f8cff;--accent2:#7c5cff;
-    --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;
+    --neon:#00ffff;
+    --purple:#a855f7;
+    --pink:#ec4899;
+    --green:#00ff9d;
+    --red:#ff4d6d;
+    --yellow:#ffb800;
+    --bg:#05010d;
   }
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-    background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
-  header{background:linear-gradient(135deg,#1a2138,#121829);border-bottom:1px solid var(--border);
-    padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  .logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-  .badge-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;
-    font-size:12px;background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.3)}
-  .badge-status.err{background:rgba(239,68,68,.1);color:var(--red);border-color:rgba(239,68,68,.3)}
-  .badge-status.warn{background:rgba(245,158,11,.1);color:var(--yellow);border-color:rgba(245,158,11,.3)}
-  .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  html,body{height:100%;width:100%;background:var(--bg);color:#e0e7ff;
+    overflow:hidden;font-size:13px;}
 
-  main{flex:1;display:grid;grid-template-columns:340px 1fr;overflow:hidden}
-  @media(max-width:900px){main{grid-template-columns:1fr}}
-  aside{background:var(--panel);border-right:1px solid var(--border);padding:16px;
-    overflow-y:auto;display:flex;flex-direction:column;gap:14px}
-  .field{display:flex;flex-direction:column;gap:6px}
-  .field label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-  .field input,.field select,.field textarea{background:var(--panel2);border:1px solid var(--border);
-    color:var(--text);padding:9px 11px;border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border .2s}
-  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
-  .field small{font-size:10px;color:var(--muted)}
-  .row{display:flex;gap:8px}.row>*{flex:1}
-  button{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;
-    padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;
-    transition:opacity .2s,transform .1s;font-family:inherit}
-  button:hover{opacity:.9}button:active{transform:scale(.98)}button:disabled{opacity:.5;cursor:not-allowed}
-  button.ghost{background:var(--panel2);border:1px solid var(--border);color:var(--text)}
-  button.ghost:hover{border-color:var(--accent)}
-  .info-box{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px}
-  .info-box .k{color:var(--muted)}.info-box .v{color:var(--text);font-family:ui-monospace,monospace;word-break:break-all}
-  .info-box .v.free{color:var(--green);font-weight:600}
-  .info-box .v.premium{color:var(--yellow);font-weight:600}
-  .log{background:#0a0e1a;border:1px solid var(--border);border-radius:10px;padding:8px;
-    font-size:11px;font-family:ui-monospace,monospace;max-height:170px;overflow-y:auto;color:var(--muted);line-height:1.55}
-  .log .ok{color:var(--green)}.log .fail{color:var(--red)}.log .info{color:var(--accent)}.log .warn{color:var(--yellow)}
+  body{
+    display:grid;
+    grid-template-columns: 1fr 480px;
+    height:100vh;
+  }
 
-  .chat{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
-  .chat-head{padding:10px 18px;border-bottom:1px solid var(--border);background:var(--panel);
-    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-  .chat-head .cm{font-size:12px;color:var(--muted)}
-  .chat-head .cm b{color:var(--accent);font-family:ui-monospace,monospace}
-  .chat-head select{background:var(--panel2);border:1px solid var(--border);color:var(--text);
-    padding:6px 10px;border-radius:6px;font-size:12px;max-width:340px;font-family:inherit}
-  .messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
-  .msg{max-width:82%;padding:11px 15px;border-radius:12px;font-size:14px;line-height:1.6;
-    white-space:pre-wrap;word-wrap:break-word}
-  .msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--accent),var(--accent2));
-    color:#fff;border-bottom-right-radius:4px}
-  .msg.assistant{align-self:flex-start;background:var(--panel2);border:1px solid var(--border);border-bottom-left-radius:4px}
-  .msg.system{align-self:center;background:transparent;border:1px dashed var(--border);
-    color:var(--muted);font-size:12px;padding:5px 12px}
-  .msg.assistant code{background:#0a0e1a;padding:2px 6px;border-radius:4px;
-    font-family:ui-monospace,monospace;font-size:13px}
-  .msg.assistant pre{background:#0a0e1a;padding:12px;border-radius:8px;overflow-x:auto;margin:8px 0;font-size:13px}
-  .cursor{display:inline-block;width:7px;height:15px;background:var(--accent);
-    animation:blink 1s infinite;vertical-align:text-bottom;margin-left:2px}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-  .input-area{padding:14px 18px;border-top:1px solid var(--border);background:var(--panel);
-    display:flex;gap:10px;align-items:flex-end}
-  .input-area textarea{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);
-    padding:11px;border-radius:10px;resize:none;font-size:14px;font-family:inherit;outline:none;
-    min-height:44px;max-height:200px;line-height:1.5}
-  .input-area textarea:focus{border-color:var(--accent)}
-  .input-area button{padding:11px 18px}
-  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;text-transform:uppercase}
-  .badge.free{background:rgba(34,197,94,.15);color:var(--green)}
-  .badge.premium{background:rgba(245,158,11,.15);color:var(--yellow)}
-  ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:transparent}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-  ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+  /* ============ LEFT: TEST PANEL ============ */
+  .left{
+    padding:24px;
+    overflow-y:auto;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(168,85,247,.25), transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(0,255,255,.2), transparent 50%),
+      #05010d;
+    border-right:1px solid rgba(0,255,255,.2);
+  }
+
+  h1{
+    font-size:18px;letter-spacing:3px;margin-bottom:6px;
+    background:linear-gradient(90deg,#00ffff,#a855f7,#ec4899);
+    background-size:200% auto;
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    animation:shine 3s linear infinite;
+  }
+  @keyframes shine{to{background-position:200% center;}}
+
+  .sub{font-size:11px;color:#6b7a90;letter-spacing:1.5px;margin-bottom:24px;}
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;font-size:10px;letter-spacing:2px;
+    color:#6b7a90;margin-bottom:8px;text-transform:uppercase;
+  }
+  .field input{
+    width:100%;padding:12px 14px;border-radius:10px;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(0,255,255,.25);
+    color:#fff;font-size:13px;outline:none;
+    font-family:inherit;
+    transition:all .25s;
+  }
+  .field input:focus{
+    border-color:var(--neon);
+    box-shadow:0 0 0 3px rgba(0,255,255,.12);
+    background:rgba(0,255,255,.05);
+  }
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn{
+    padding:12px 20px;border-radius:10px;border:1px solid rgba(0,255,255,.4);
+    background:rgba(0,255,255,.05);color:var(--neon);
+    cursor:pointer;font-size:12px;letter-spacing:1.5px;
+    font-family:inherit;font-weight:700;text-transform:uppercase;
+    transition:all .25s;
+  }
+  .btn:hover{background:rgba(0,255,255,.15);box-shadow:0 0 20px rgba(0,255,255,.4);}
+  .btn:active{transform:scale(.96);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn.primary{
+    background:linear-gradient(135deg,#00ffff,#a855f7,#ec4899);
+    color:#fff;border:none;
+  }
+  .btn.danger{color:var(--red);border-color:rgba(255,77,109,.4);}
+  .btn.danger:hover{background:rgba(255,77,109,.15);box-shadow:0 0 20px rgba(255,77,109,.4);}
+
+  .card{
+    margin-top:20px;padding:16px;border-radius:12px;
+    background:rgba(255,255,255,.02);
+    border:1px solid rgba(168,85,247,.2);
+  }
+  .card h3{
+    font-size:11px;letter-spacing:2px;color:var(--purple);
+    text-transform:uppercase;margin-bottom:12px;
+  }
+  .result{
+    font-size:12px;line-height:1.7;
+    color:#a5b4fc;
+    white-space:pre-wrap;word-break:break-all;
+    max-height:220px;overflow-y:auto;
+    padding:10px;border-radius:8px;
+    background:rgba(0,0,0,.4);
+  }
+  .result::-webkit-scrollbar{width:5px;}
+  .result::-webkit-scrollbar-thumb{background:var(--neon);border-radius:4px;}
+
+  .status-badge{
+    display:inline-block;padding:3px 10px;border-radius:6px;
+    font-size:10px;font-weight:700;letter-spacing:1.5px;
+    margin-right:8px;
+  }
+  .ok{background:rgba(0,255,157,.15);color:var(--green);border:1px solid rgba(0,255,157,.4);}
+  .fail{background:rgba(255,77,109,.15);color:var(--red);border:1px solid rgba(255,77,109,.4);}
+  .warn{background:rgba(255,184,0,.15);color:var(--yellow);border:1px solid rgba(255,184,0,.4);}
+  .info{background:rgba(0,255,255,.15);color:var(--neon);border:1px solid rgba(0,255,255,.4);}
+
+  /* ============ RIGHT: LOG PANEL ============ */
+  .right{
+    background:rgba(5,1,13,.98);
+    display:flex;flex-direction:column;
+    border-left:1px solid rgba(168,85,247,.2);
+  }
+
+  .log-head{
+    padding:16px 18px;
+    border-bottom:1px solid rgba(168,85,247,.2);
+    display:flex;align-items:center;gap:10px;
+    background:linear-gradient(180deg,rgba(168,85,247,.08),transparent);
+  }
+  .log-head h2{
+    font-size:12px;letter-spacing:2px;color:var(--neon);
+    text-transform:uppercase;flex:1;
+  }
+  .log-head .count{
+    font-size:10px;color:#6b7a90;font-family:inherit;
+  }
+
+  .log-body{
+    flex:1;overflow-y:auto;
+    padding:12px;
+    font-size:11.5px;line-height:1.6;
+  }
+  .log-body::-webkit-scrollbar{width:6px;}
+  .log-body::-webkit-scrollbar-thumb{
+    background:linear-gradient(180deg,#00ffff,#ec4899);border-radius:4px;
+  }
+
+  .log-line{
+    padding:6px 10px;
+    border-left:3px solid;
+    border-radius:4px;
+    margin-bottom:4px;
+    font-family:inherit;
+    word-break:break-all;
+    animation:logIn .25s ease;
+  }
+  @keyframes logIn{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+
+  .log-line .time{color:#6b7a90;margin-right:6px;}
+  .log-line.log-info{border-color:var(--neon);background:rgba(0,255,255,.04);color:#a5f3ff;}
+  .log-line.log-ok{border-color:var(--green);background:rgba(0,255,157,.04);color:#a7f3d0;}
+  .log-line.log-warn{border-color:var(--yellow);background:rgba(255,184,0,.04);color:#fde68a;}
+  .log-line.log-error{border-color:var(--red);background:rgba(255,77,109,.08);color:#fecaca;}
+  .log-line.log-fetch{border-color:var(--purple);background:rgba(168,85,247,.05);color:#ddd6fe;}
+
+  .log-line .tag{
+    display:inline-block;padding:1px 6px;border-radius:4px;
+    font-size:9px;font-weight:700;letter-spacing:1px;
+    margin-right:6px;text-transform:uppercase;
+  }
+  .log-info .tag{background:rgba(0,255,255,.2);color:var(--neon);}
+  .log-ok .tag{background:rgba(0,255,157,.2);color:var(--green);}
+  .log-warn .tag{background:rgba(255,184,0,.2);color:var(--yellow);}
+  .log-error .tag{background:rgba(255,77,109,.2);color:var(--red);}
+  .log-fetch .tag{background:rgba(168,85,247,.2);color:var(--purple);}
+
+  .log-actions{
+    padding:12px;
+    border-top:1px solid rgba(168,85,247,.2);
+    display:flex;gap:8px;
+  }
+  .log-actions .btn{flex:1;padding:10px;font-size:11px;}
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width:960px){
+    body{grid-template-columns:1fr;grid-template-rows:1fr 340px;}
+    .right{border-left:none;border-top:1px solid rgba(168,85,247,.2);}
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">⚡ xKiro AI Client — Premium</div>
-  <div id="statusBadge" class="badge-status warn">
-    <span class="dot"></span><span id="statusText">Chưa kết nối</span>
+<!-- LEFT: TEST -->
+<div class="left">
+  <h1>◆ XKIRO DEBUG TOOL</h1>
+  <div class="sub">Kiểm tra kết nối · quét model · log mọi lỗi</div>
+
+  <div class="field">
+    <label>API Base URL</label>
+    <input id="baseUrl" value="https://api.xkiro.com/v1" spellcheck="false">
   </div>
-</header>
 
-<main>
-  <aside>
-    <div class="field">
-      <label>Base URL</label>
-      <input id="baseUrl" value="https://api.xkiro.com/v1" />
-    </div>
-    <div class="field">
-      <label>API Key</label>
-      <input type="password" id="apiKey" placeholder="xk-... hoặc sk-..." />
-      <small>Key lưu cục bộ trong localStorage</small>
-    </div>
-    <div class="field">
-      <label>Auth Header</label>
-      <select id="authType">
-        <option value="bearer">Authorization: Bearer</option>
-        <option value="x-api-key">x-api-key</option>
-      </select>
-    </div>
+  <div class="field">
+    <label>API Key</label>
+    <input id="apiKey" type="password" placeholder="sk-..." spellcheck="false">
+  </div>
 
-    <!-- KHÔNG QUÉT: chọn model trực tiếp từ danh sách premium -->
-    <div class="field">
-      <label>Model (Premium)</label>
-      <select id="modelSelect">
-        <option value="openai/gpt-6-astra">openai/gpt-6-astra — $10/$50</option>
-        <option value="openai/gpt-5.6-sol">openai/gpt-5.6-sol — $5/$30</option>
-        <option value="openai/gpt-5.6-luna">openai/gpt-5.6-luna — $0.10/$0.60</option>
-        <option value="openai/gpt-5.6-terra">openai/gpt-5.6-terra — $1/$6</option>
-        <option value="anthropic/claude-fable-5-1">anthropic/claude-fable-5-1 — $10/$50</option>
-        <option value="anthropic/claude-fable-5">anthropic/claude-fable-5 — $10/$50</option>
-        <option value="anthropic/claude-opus-5">anthropic/claude-opus-5 — $5/$25</option>
-        <option value="anthropic/claude-opus-4.8">anthropic/claude-opus-4.8 — $5/$25</option>
-        <option value="anthropic/claude-sonnet-5">anthropic/claude-sonnet-5 — $2/$10</option>
-        <option value="google/gemini-3.8-flash">google/gemini-3.8-flash — $0.75/$3.75</option>
-        <option value="google/gemini-3.6-flash">google/gemini-3.6-flash — $1.50/$7.50</option>
-        <option value="x-ai/grok-4.6">x-ai/grok-4.6 — $1.30/$3.90</option>
-        <option value="x-ai/grok-4.5">x-ai/grok-4.5 — $1.30/$3.90</option>
-        <option value="x-ai/grok-build-0.1">x-ai/grok-build-0.1 — $0.65/$1.30</option>
-        <option value="z-ai/glm-5.3">z-ai/glm-5.3 — $1.40/$4.40</option>
-        <option value="z-ai/glm-5.2">z-ai/glm-5.2 — $1.40/$4.40</option>
-        <option value="z-ai/glm-5.3-flash">z-ai/glm-5.3-flash — $0.15/$0.50</option>
-        <option value="moonshotai/kimi-k3">moonshotai/kimi-k3 — $3/$15</option>
-        <option value="moonshotai/kimi-k2.7-code">moonshotai/kimi-k2.7-code — $0.46/$2.28</option>
-        <option value="qwen/qwen3.8-max">qwen/qwen3.8-max — $2/$6</option>
-        <option value="qwen/qwen3.7-max">qwen/qwen3.7-max — $1.48/...</option>
-        <option value="minimax/minimax-m3">minimax/minimax-m3 — $0.30/$1.20</option>
-        <option value="tencent/hy4-preview">tencent/hy4-preview — $0.54/$1.63</option>
-        <option value="tencent/hy3">tencent/hy3 — $0.08/$0.33</option>
-        <option value="deepseek/deepseek-v4.1-flash">deepseek/deepseek-v4.1-flash — $0.08/$0.30</option>
-      </select>
-      <small>Model có phí — yêu cầu key trả phí hoặc Pro</small>
-    </div>
+  <div class="row">
+    <button class="btn primary" id="btnFullTest">▶ Chạy Full Test</button>
+    <button class="btn" id="btnTestKey">🔑 Test Key</button>
+    <button class="btn" id="btnTestModels">📋 Test /models</button>
+    <button class="btn" id="btnTestChat">💬 Test Chat</button>
+    <button class="btn danger" id="btnClearLog">🗑 Xóa Log</button>
+  </div>
 
-    <button id="testBtn">🧪 Test key (qua /usage)</button>
+  <div class="card">
+    <h3>Kết quả tóm tắt</h3>
+    <div class="result" id="summary">Chưa chạy test nào...</div>
+  </div>
 
-    <div class="info-box" id="modelInfo">
-      <div><span class="k">Model đang chọn:</span> <span class="v premium" id="selModel">openai/gpt-6-astra</span></div>
-      <div style="margin-top:4px"><span class="k">Trạng thái:</span> <span id="modelStatus" class="badge premium">premium</span></div>
-    </div>
+  <div class="card">
+    <h3>Model tìm được</h3>
+    <div class="result" id="modelsFound">Chưa quét...</div>
+  </div>
 
-    <div class="field">
-      <label>Log</label>
-      <div class="log" id="scanLog">Sẵn sàng. Nhập key và chọn model.</div>
-    </div>
+  <div class="card">
+    <h3>Chẩn đoán</h3>
+    <div class="result" id="diagnosis">Chưa có chẩn đoán...</div>
+  </div>
+</div>
 
-    <div class="field">
-      <label>System Prompt</label>
-      <textarea id="systemPrompt" rows="3">Bạn là trợ lý AI hữu ích, trả lời ngắn gọn và chính xác.</textarea>
-    </div>
-
-    <div class="row">
-      <button class="ghost" id="clearBtn">🗑 Xoá chat</button>
-    </div>
-  </aside>
-
-  <section class="chat">
-    <div class="chat-head">
-      <div class="cm">Model: <b id="headerModel">openai/gpt-6-astra</b></div>
-    </div>
-    <div class="messages" id="messages">
-      <div class="msg system">Chọn model premium ở cột trái, nhập API key và bắt đầu chat.</div>
-    </div>
-    <div class="input-area">
-      <textarea id="userInput" placeholder="Nhập tin nhắn... (Enter gửi, Shift+Enter xuống dòng)" rows="1"></textarea>
-      <button id="sendBtn">Gửi ➤</button>
-    </div>
-  </section>
-</main>
+<!-- RIGHT: LOG -->
+<div class="right">
+  <div class="log-head">
+    <h2>Live Log</h2>
+    <span class="count" id="logCount">0 dòng</span>
+  </div>
+  <div class="log-body" id="logBody"></div>
+  <div class="log-actions">
+    <button class="btn" id="btnCopyLog">📋 Copy Log</button>
+    <button class="btn danger" id="btnClear2">🗑 Xóa</button>
+  </div>
+</div>
 
 <script>
-(function(){
-'use strict';
+/* =========================================================
+   LOGGER — TẤT CẢ LOG ĐI QUA ĐÂY
+   ========================================================= */
+const logBody = document.getElementById("logBody");
+const logCount = document.getElementById("logCount");
+let logLines = [];      // Lưu text thuần để copy
+let lineCount = 0;
 
-const $ = id => document.getElementById(id);
-const baseUrlEl=$('baseUrl'), apiKeyEl=$('apiKey'), authTypeEl=$('authType');
-const testBtn=$('testBtn'), clearBtn=$('clearBtn'), sendBtn=$('sendBtn');
-const userInput=$('userInput'), messagesEl=$('messages'), modelSelect=$('modelSelect');
-const headerModel=$('headerModel'), scanLog=$('scanLog'), statusBadge=$('statusBadge');
-const statusText=$('statusText'), modelInfo=$('modelInfo'), selModel=$('selModel');
-const modelStatusEl=$('modelStatus'), systemPromptEl=$('systemPrompt');
+function ts(){
+  const d = new Date();
+  return d.toTimeString().slice(0,8) + "." + String(d.getMilliseconds()).padStart(3,"0");
+}
 
-const state = { selectedModel:'openai/gpt-6-astra', streaming:false, abort:null, history:[] };
+function log(level, tag, ...args){
+  const msg = args.map(a => {
+    if(a instanceof Error) return `${a.name}: ${a.message}`;
+    if(typeof a === "object") {
+      try { return JSON.stringify(a); } catch { return String(a); }
+    }
+    return String(a);
+  }).join(" ");
 
-/* ---------- persistence ---------- */
-const KEY='xkiro_premium_v1';
-function save(){try{localStorage.setItem(KEY,JSON.stringify({
-  baseUrl:baseUrlEl.value, apiKey:apiKeyEl.value, authType:authTypeEl.value,
-  selectedModel:state.selectedModel, systemPrompt:systemPromptEl.value
-}));}catch(e){}}
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'{}');
-  if(d.baseUrl)baseUrlEl.value=d.baseUrl; if(d.apiKey)apiKeyEl.value=d.apiKey;
-  if(d.authType)authTypeEl.value=d.authType; if(d.selectedModel)state.selectedModel=d.selectedModel;
-  if(d.systemPrompt)systemPromptEl.value=d.systemPrompt;
-}catch(e){}}
-[baseUrlEl,apiKeyEl,authTypeEl,systemPromptEl].forEach(el=>{
-  el.addEventListener('change',save);
-  el.addEventListener('input',()=>{clearTimeout(el._t);el._t=setTimeout(save,400)});
+  // Ghi vào mảng để copy
+  logLines.push(`[${ts()}] [${tag}] ${msg}`);
+
+  // Tạo DOM
+  const el = document.createElement("div");
+  el.className = "log-line log-" + level;
+  el.innerHTML = `<span class="time">${ts()}</span><span class="tag">${tag}</span>${escapeHtml(msg)}`;
+  logBody.appendChild(el);
+  logBody.scrollTop = logBody.scrollHeight;
+
+  lineCount++;
+  logCount.textContent = lineCount + " dòng";
+  return msg;
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// Helper shortcuts
+const L = {
+  info:  (tag, ...a) => log("info",  tag, ...a),
+  ok:    (tag, ...a) => log("ok",    tag, ...a),
+  warn:  (tag, ...a) => log("warn",  tag, ...a),
+  error: (tag, ...a) => log("error", tag, ...a),
+  fetch: (tag, ...a) => log("fetch", tag, ...a),
+};
+
+/* =========================================================
+   SUMMARY UI
+   ========================================================= */
+const summaryEl = document.getElementById("summary");
+const modelsEl  = document.getElementById("modelsFound");
+const diagEl    = document.getElementById("diagnosis");
+
+function setSummary(html){ summaryEl.innerHTML = html; }
+function setModels(html){ modelsEl.innerHTML = html; }
+function setDiag(html){ diagEl.innerHTML = html; }
+
+function badge(type, text){
+  return `<span class="status-badge ${type}">${text}</span>`;
+}
+
+/* =========================================================
+   DOM
+   ========================================================= */
+const baseUrl = document.getElementById("baseUrl");
+const apiKey  = document.getElementById("apiKey");
+const btnFullTest = document.getElementById("btnFullTest");
+const btnTestKey = document.getElementById("btnTestKey");
+const btnTestModels = document.getElementById("btnTestModels");
+const btnTestChat = document.getElementById("btnTestChat");
+const btnClearLog = document.getElementById("btnClearLog");
+const btnClear2 = document.getElementById("btnClear2");
+const btnCopyLog = document.getElementById("btnCopyLog");
+
+/* =========================================================
+   TEST 1: KIỂM TRA KEY (gọi chat thử)
+   ========================================================= */
+async function testKey(){
+  const url = baseUrl.value.trim().replace(/\/$/,"");
+  const key = apiKey.value.trim();
+  if(!key){
+    L.error("KEY", "Chưa nhập API key");
+    return { ok:false, reason:"no-key" };
+  }
+  L.info("KEY", "Test key với endpoint /chat/completions");
+
+  const testModels = [
+    "openai/gpt-5.6-sol",
+    "gpt-4o-mini",
+    "gpt-3.5-turbo",
+  ];
+
+  for(const model of testModels){
+    const t0 = performance.now();
+    try {
+      L.fetch("KEY", `POST ${url}/chat/completions  model=${model}`);
+      const r = await fetch(`${url}/chat/completions`, {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":`Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages:[{ role:"user", content:"hi" }],
+          max_tokens: 5,
+        }),
+      });
+      const dt = Math.round(performance.now() - t0);
+      const text = await r.text();
+
+      // Log headers CORS
+      const acao = r.headers.get("access-control-allow-origin");
+      L.info("CORS", `access-control-allow-origin = ${acao || "(không có)"}`);
+
+      L.info("KEY", `HTTP ${r.status} · ${dt}ms · ${text.slice(0,200)}`);
+
+      if(r.ok){
+        L.ok("KEY", `Model "${model}" HOẠT ĐỘNG`);
+        return { ok:true, model, status:r.status, dt, acao };
+      } else {
+        L.warn("KEY", `Model "${model}" lỗi HTTP ${r.status}`);
+      }
+    } catch(err){
+      const dt = Math.round(performance.now() - t0);
+      L.error("KEY", `Fetch thất bại sau ${dt}ms: ${err.name}: ${err.message}`);
+      // Đây là dấu hiệu CORS
+      if(err.message.includes("Failed to fetch") || err.name === "TypeError"){
+        L.error("CORS", "⚠️ RẤT CÓ THỂ LÀ CORS — trình duyệt chặn request");
+        return { ok:false, reason:"cors", err: err.message };
+      }
+    }
+  }
+  return { ok:false, reason:"no-model-worked" };
+}
+
+/* =========================================================
+   TEST 2: GET /models
+   ========================================================= */
+async function testModelsEndpoint(){
+  const url = baseUrl.value.trim().replace(/\/$/,"");
+  const key = apiKey.value.trim();
+  if(!key){
+    L.error("MODELS", "Chưa nhập API key");
+    return { ok:false, reason:"no-key" };
+  }
+
+  const t0 = performance.now();
+  try {
+    L.fetch("MODELS", `GET ${url}/models`);
+    const r = await fetch(`${url}/models`, {
+      headers:{ Authorization:`Bearer ${key}` },
+    });
+    const dt = Math.round(performance.now() - t0);
+
+    L.info("MODELS", `HTTP ${r.status} · ${dt}ms`);
+
+    // Log CORS
+    const acao = r.headers.get("access-control-allow-origin");
+    L.info("CORS", `access-control-allow-origin = ${acao || "(không có)"}`);
+
+    const text = await r.text();
+    L.info("MODELS", `Body: ${text.slice(0,500)}`);
+
+    if(!r.ok){
+      L.error("MODELS", `Endpoint trả ${r.status} — server có thể không có /models`);
+      return { ok:false, status:r.status, dt, acao };
+    }
+
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e){
+      L.error("MODELS", "Body không phải JSON");
+      return { ok:false, reason:"bad-json" };
+    }
+
+    const list = data.data || data.models || (Array.isArray(data) ? data : []);
+    L.ok("MODELS", `Tìm được ${list.length} model`);
+
+    if(list.length > 0){
+      L.info("MODELS", "5 model đầu:");
+      list.slice(0,5).forEach((m,i) => {
+        const id = m.id || m.name || "(không có id)";
+        L.info("MODELS", `  ${i+1}. ${id}`);
+      });
+    }
+
+    return { ok:true, list, dt, acao };
+  } catch(err){
+    const dt = Math.round(performance.now() - t0);
+    L.error("MODELS", `Fetch thất bại sau ${dt}ms: ${err.name}: ${err.message}`);
+    if(err.message.includes("Failed to fetch")){
+      L.error("CORS", "⚠️ Nghi ngờ CORS chặn request /models");
+    }
+    return { ok:false, reason:"fetch-error", err: err.message };
+  }
+}
+
+/* =========================================================
+   TEST 3: CHAT 1 CÂU
+   ========================================================= */
+async function testChat(model){
+  const url = baseUrl.value.trim().replace(/\/$/,"");
+  const key = apiKey.value.trim();
+  if(!model) model = "openai/gpt-5.6-sol";
+
+  const t0 = performance.now();
+  try {
+    L.fetch("CHAT", `POST ${url}/chat/completions  model=${model}`);
+    const r = await fetch(`${url}/chat/completions`, {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        Authorization:`Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages:[{ role:"user", content:"Hello, trả lời 1 câu ngắn" }],
+      }),
+    });
+    const dt = Math.round(performance.now() - t0);
+    const text = await r.text();
+    L.info("CHAT", `HTTP ${r.status} · ${dt}ms`);
+
+    if(!r.ok){
+      L.error("CHAT", `Body: ${text.slice(0,300)}`);
+      return { ok:false };
+    }
+
+    const data = JSON.parse(text);
+    const reply = data.choices?.[0]?.message?.content || "(không có content)";
+    L.ok("CHAT", `Phản hồi: ${reply.slice(0,150)}`);
+    return { ok:true, reply };
+  } catch(err){
+    const dt = Math.round(performance.now() - t0);
+    L.error("CHAT", `Lỗi sau ${dt}ms: ${err.message}`);
+    return { ok:false, err: err.message };
+  }
+}
+
+/* =========================================================
+   FULL TEST — CHẠY TẤT CẢ + KẾT LUẬN
+   ========================================================= */
+async function fullTest(){
+  clearAll();
+  L.info("START", "=== BẮT ĐẦU FULL TEST ===");
+
+  // Log thông tin môi trường
+  L.info("ENV", `Origin: ${location.origin}`);
+  L.info("ENV", `URL: ${location.href}`);
+  L.info("ENV", `UserAgent: ${navigator.userAgent.slice(0,80)}`);
+  L.info("ENV", `Base: ${baseUrl.value}`);
+
+  // 1. Test key
+  L.info("STEP", "─── BƯỚC 1: TEST KEY ───");
+  const keyResult = await testKey();
+
+  // 2. Test /models
+  L.info("STEP", "─── BƯỚC 2: TEST /models ───");
+  const modelsResult = await testModelsEndpoint();
+
+  // 3. Test chat
+  L.info("STEP", "─── BƯỚC 3: TEST CHAT ───");
+  const chatModel = keyResult.model || "openai/gpt-5.6-sol";
+  const chatResult = await testChat(chatModel);
+
+  // ============ KẾT LUẬN ============
+  L.info("DONE", "=== KẾT THÚC ===");
+
+  // Summary
+  let sumHtml = "";
+  sumHtml += keyResult.ok
+    ? `${badge("ok","PASS")} Key hợp lệ · model: <b>${keyResult.model}</b> · ${keyResult.dt}ms`
+    : `${badge("fail","FAIL")} Key KHÔNG hoạt động ${keyResult.reason ? "("+keyResult.reason+")" : ""}`;
+  sumHtml += "<br>";
+  sumHtml += modelsResult.ok
+    ? `${badge("ok","PASS")} /models OK · ${modelsResult.list.length} model · ${modelsResult.dt}ms`
+    : `${badge("fail","FAIL")} /models lỗi ${modelsResult.status ? "HTTP "+modelsResult.status : ""}`;
+  sumHtml += "<br>";
+  sumHtml += chatResult.ok
+    ? `${badge("ok","PASS")} Chat OK`
+    : `${badge("fail","FAIL")} Chat lỗi`;
+  setSummary(sumHtml);
+
+  // Models list
+  if(modelsResult.ok && modelsResult.list.length){
+    let m = `<b>${modelsResult.list.length} model:</b><br>`;
+    modelsResult.list.forEach((mm,i) => {
+      const id = mm.id || mm.name || "(?)";
+      m += `${i+1}. ${id}<br>`;
+    });
+    setModels(m);
+  } else {
+    setModels("Không lấy được danh sách model.");
+  }
+
+  // Chẩn đoán
+  let diag = "";
+  if(!keyResult.ok && keyResult.reason === "cors"){
+    diag = `<b style="color:#ff4d6d">❌ CORS CHẶN</b><br><br>
+      Trình duyệt không cho phép gọi API từ <code>${location.origin}</code>.<br><br>
+      <b>Cách fix:</b><br>
+      1. Thêm header <code>Access-Control-Allow-Origin: *</code> vào server XKiro<br>
+      2. Hoặc dùng backend proxy (Node.js / Cloudflare Worker)<br>
+      3. Hoặc chạy HTML cùng domain với API`;
+  } else if(!keyResult.ok && keyResult.reason === "no-model-worked"){
+    diag = `<b style="color:#ffb800">⚠️ KEY HOẶC MODEL SAI</b><br><br>
+      Kết nối được nhưng không model nào chạy.<br>
+      Kiểm tra:<br>
+      • Key có đúng không (hết hạn?)<br>
+      • Model name có tồn tại trên server?<br>
+      • Xem HTTP status trong log bên phải`;
+  } else if(keyResult.ok && !chatResult.ok){
+    diag = `<b style="color:#ffb800">⚠️ KEY OK NHƯNG CHAT LỖI</b><br><br>
+      Có thể do payload không hợp lệ hoặc server yêu cầu thêm field.`;
+  } else if(keyResult.ok && chatResult.ok){
+    diag = `<b style="color:#00ff9d">✅ TẤT CẢ OK</b><br><br>
+      Key + API + Model đều hoạt động.<br>
+      Nếu HTML chính không chạy → kiểm tra code phía client.`;
+  } else {
+    diag = `<b style="color:#ffb800">⚠️ CHẨN ĐOÁN KHÁC</b><br><br>
+      Xem chi tiết log bên phải để biết thêm.`;
+  }
+  setDiag(diag);
+
+  btnFullTest.disabled = false;
+}
+
+/* =========================================================
+   CLEAR
+   ========================================================= */
+function clearAll(){
+  logBody.innerHTML = "";
+  logLines = [];
+  lineCount = 0;
+  logCount.textContent = "0 dòng";
+  setSummary("Đang chạy...");
+  setModels("Đang chạy...");
+  setDiag("Đang chạy...");
+}
+
+btnClearLog.addEventListener("click", clearAll);
+btnClear2.addEventListener("click", clearAll);
+
+/* =========================================================
+   COPY LOG
+   ========================================================= */
+btnCopyLog.addEventListener("click", async () => {
+  const text = logLines.join("\n");
+  try {
+    await navigator.clipboard.writeText(text);
+    L.ok("COPY", `Đã copy ${logLines.length} dòng vào clipboard`);
+  } catch(e){
+    // Fallback
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    L.ok("COPY", `Đã copy (fallback) ${logLines.length} dòng`);
+  }
 });
 
-/* ---------- UI helpers ---------- */
-function setStatus(t,txt){statusBadge.className='badge-status '+(t==='ok'?'':t);statusText.textContent=txt;}
-function log(msg,cls){const d=document.createElement('div');if(cls)d.className=cls;
-  d.textContent=msg;scanLog.appendChild(d);scanLog.scrollTop=scanLog.scrollHeight;}
-function clearLog(){scanLog.innerHTML='';}
-function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function renderMarkdown(text){
-  let h=escapeHtml(text);
-  h=h.replace(/```
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+btnFullTest.addEventListener("click", async () => {
+  btnFullTest.disabled = true;
+  try { await fullTest(); }
+  catch(e){ L.error("FULL", "Crash: " + e.message); }
+  finally { btnFullTest.disabled = false; }
+});
+
+btnTestKey.addEventListener("click", async () => {
+  clearAll();
+  const r = await testKey();
+  setSummary(r.ok
+    ? `${badge("ok","PASS")} Model "${r.model}" chạy được`
+    : `${badge("fail","FAIL")} Không chạy được: ${r.reason || "unknown"}`);
+});
+
+btnTestModels.addEventListener("click", async () => {
+  clearAll();
+  const r = await testModelsEndpoint();
+  setSummary(r.ok
+    ? `${badge("ok","PASS")} ${r.list.length} model`
+    : `${badge("fail","FAIL")} Lỗi`);
+  if(r.ok){
+    let m = "";
+    r.list.forEach((mm,i) => {
+      m += `${i+1}. ${mm.id || mm.name || "(?)"}<br>`;
+    });
+    setModels(m);
+  }
+});
+
+btnTestChat.addEventListener("click", async () => {
+  clearAll();
+  const r = await testChat();
+  setSummary(r.ok
+    ? `${badge("ok","PASS")} Chat OK`
+    : `${badge("fail","FAIL")} Chat lỗi`);
+});
+
+/* =========================================================
+   INIT
+   ========================================================= */
+(function init(){
+  L.info("INIT", "Debug Tool sẵn sàng");
+  L.info("INIT", `Origin hiện tại: ${location.origin}`);
+  L.info("INIT", `→ So sánh với API domain để biết có bị CORS không`);
+  L.info("INIT", "Nhập API key rồi bấm '▶ Chạy Full Test'");
+})();
+</script>
+</body>
+</html>
