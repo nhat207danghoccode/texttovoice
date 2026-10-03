@@ -70,7 +70,7 @@
     mix-blend-mode:overlay;
   }
 
-  /* ===== TOP BAR ===== */
+  /* TOP BAR */
   .topbar{
     position:relative;z-index:20;
     display:flex;align-items:center;justify-content:space-between;
@@ -150,14 +150,14 @@
   .icon-btn:active{transform:translateY(0) scale(.96)}
   .icon-btn svg{width:16px;height:16px;position:relative}
 
-  /* ===== STAGE ===== */
+  /* STAGE */
   .stage{
     position:relative;z-index:2;
     flex:1;display:flex;flex-direction:column;overflow:hidden;
     max-width:920px;width:100%;margin:0 auto;padding:0 28px;
   }
 
-  /* ===== HERO ===== */
+  /* HERO */
   .hero{
     flex:1;display:flex;flex-direction:column;
     align-items:center;justify-content:center;
@@ -317,7 +317,7 @@
   .hint-arrow{color:var(--text-4);font-size:14px;transition:all .3s}
   .hint:hover .hint-arrow{color:var(--accent);transform:translateX(3px)}
 
-  /* ===== STREAM ===== */
+  /* STREAM */
   .stream{
     flex:1;overflow-y:auto;
     padding:28px 0 40px;
@@ -466,81 +466,10 @@
   .sys-msg.ok{color:var(--green);border-color:rgba(74,222,128,0.25);background:rgba(74,222,128,0.05)}
   .sys-msg.err{color:var(--red);border-color:rgba(251,113,133,0.25);background:rgba(251,113,133,0.05)}
 
-  /* ===== SLASH MENU ===== */
-  .slash-menu{
-    position:absolute;
-    left:0;right:0;
-    bottom:calc(100% + 8px);
-    background:rgba(10,11,16,0.95);
-    backdrop-filter:blur(28px) saturate(180%);
-    -webkit-backdrop-filter:blur(28px) saturate(180%);
-    border:1px solid var(--line-2);
-    border-radius:16px;
-    box-shadow:
-      0 20px 60px rgba(0,0,0,0.6),
-      inset 0 1px 0 rgba(255,255,255,0.06);
-    overflow:hidden;
-    display:none;
-    z-index:50;
-    max-height:340px;
-    overflow-y:auto;
-    animation:slashIn .2s cubic-bezier(.16,1,.3,1);
-  }
-  .slash-menu.show{display:block}
-  @keyframes slashIn{
-    from{opacity:0;transform:translateY(8px) scale(.98)}
-    to{opacity:1;transform:none}
-  }
-  .slash-menu::-webkit-scrollbar{width:6px}
-  .slash-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+  /* SLASH MENU (ẩn — không autocomplete) */
+  .slash-menu{display:none !important}
 
-  .slash-item{
-    display:flex;align-items:center;gap:14px;
-    padding:12px 16px;
-    cursor:pointer;
-    transition:background .15s;
-    border-bottom:1px solid var(--line);
-  }
-  .slash-item:last-child{border-bottom:none}
-  .slash-item:hover,
-  .slash-item.active{
-    background:rgba(124,158,255,0.1);
-  }
-  .slash-item.active{
-    box-shadow:inset 3px 0 0 var(--accent);
-  }
-  .slash-item-ico{
-    width:34px;height:34px;border-radius:9px;
-    background:rgba(124,158,255,0.12);
-    border:1px solid rgba(124,158,255,0.25);
-    display:flex;align-items:center;justify-content:center;
-    font-size:15px;color:var(--accent);flex-shrink:0;
-    font-family:var(--mono);font-weight:600;
-  }
-  .slash-item.active .slash-item-ico{
-    background:rgba(124,158,255,0.2);
-    border-color:rgba(124,158,255,0.5);
-  }
-  .slash-item-body{flex:1;min-width:0}
-  .slash-item-cmd{
-    font-family:var(--mono);font-size:13px;
-    color:var(--text);font-weight:600;
-    letter-spacing:-0.01em;
-    margin-bottom:2px;
-    display:flex;align-items:center;gap:8px;
-  }
-  .slash-item-cmd .arg{
-    color:var(--text-3);
-    font-weight:400;
-    font-size:11.5px;
-  }
-  .slash-item-desc{
-    font-size:12px;color:var(--text-3);
-    line-height:1.4;
-  }
-  .slash-item.active .slash-item-desc{color:var(--text-2)}
-
-  /* ===== COMPOSER ===== */
+  /* COMPOSER */
   .composer-wrap{
     position:relative;z-index:20;
     padding:0 28px 24px;
@@ -645,7 +574,7 @@
   .model-chip.empty{background:rgba(251,191,36,0.06);border-color:rgba(251,191,36,0.2);color:var(--amber)}
   .model-chip.empty .m-dot{background:var(--amber);box-shadow:0 0 8px var(--amber)}
 
-  /* ===== TOAST ===== */
+  /* TOAST */
   .toast-stack{
     position:fixed;bottom:110px;right:28px;z-index:300;
     display:flex;flex-direction:column;gap:10px;pointer-events:none;
@@ -674,7 +603,7 @@
   @keyframes toastIn{from{opacity:0;transform:translateX(40px) scale(.95)}to{opacity:1;transform:none}}
   .toast.out{opacity:0;transform:translateX(40px) scale(.95);transition:all .3s}
 
-  /* ===== MODEL PICKER OVERLAY ===== */
+  /* MODEL PICKER */
   .picker-overlay{
     position:fixed;inset:0;z-index:100;
     background:rgba(0,0,0,0.6);
@@ -687,7 +616,7 @@
   }
   .picker-overlay.open{opacity:1;visibility:visible}
   .picker{
-    width:100%;max-width:520px;
+    width:100%;max-width:560px;
     max-height:80vh;
     background:rgba(6,7,11,0.96);
     backdrop-filter:blur(40px) saturate(180%);
@@ -749,14 +678,46 @@
     pointer-events:none;
   }
 
-  .model-list{display:flex;flex-direction:column;gap:6px}
+  /* Vendor group */
+  .vendor-head{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 4px 8px 0;
+    margin-top:8px;
+    font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.12em;
+    color:var(--text-3);
+    border-bottom:1px solid var(--line);
+    margin-bottom:6px;
+  }
+  .vendor-head:first-child{margin-top:0}
+  .vendor-head .v-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    box-shadow:0 0 6px rgba(124,158,255,0.5);
+    flex-shrink:0;
+  }
+  .vendor-head .v-count{
+    margin-left:auto;
+    font-family:var(--mono);
+    font-size:10px;
+    color:var(--text-4);
+    padding:1px 7px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);
+    border-radius:100px;
+    font-weight:500;
+    letter-spacing:0;
+    text-transform:none;
+  }
+
+  .model-list{display:flex;flex-direction:column;gap:5px;margin-bottom:4px}
   .model-row{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:12px 14px;border-radius:12px;
+    display:flex;align-items:center;gap:10px;
+    padding:11px 13px;border-radius:11px;
     background:rgba(255,255,255,0.02);
     border:1px solid var(--line);
-    cursor:pointer;font-size:13px;
-    transition:all .25s;gap:10px;
+    cursor:pointer;font-size:12.5px;
+    transition:all .2s;gap:10px;
   }
   .model-row:hover{
     border-color:rgba(124,158,255,0.35);
@@ -768,13 +729,14 @@
     background:rgba(74,222,128,0.06);
   }
   .model-row .m-name{
-    font-family:var(--mono);font-size:12px;
+    font-family:var(--mono);font-size:11.5px;
     color:var(--text-2);flex:1;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
-  .model-row.active .m-name{color:var(--green)}
+  .model-row.active .m-name{color:var(--green);font-weight:500}
+  .model-row .m-name .free-suffix{color:var(--green)}
   .model-row .m-tag{
-    font-size:9.5px;padding:3px 8px;border-radius:6px;
+    font-size:9px;padding:2px 7px;border-radius:5px;
     font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
     background:rgba(74,222,128,0.12);
     color:var(--green);flex-shrink:0;
@@ -836,7 +798,6 @@
 
 <!-- STAGE -->
 <div class="stage">
-
   <div class="hero" id="hero">
     <div class="hero-visual">
       <div class="diamond-stage">
@@ -887,7 +848,7 @@
 <div class="composer-wrap">
   <div class="composer">
     <div class="slash-menu" id="slashMenu"></div>
-    <textarea id="input" placeholder="Gõ /api để nhập key, hoặc / để xem lệnh..." rows="1"></textarea>
+    <textarea id="input" placeholder="Gõ /api để nhập key..." rows="1"></textarea>
     <button class="send-btn" id="btnSend" title="Gửi">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="22" y1="2" x2="11" y2="13"/>
@@ -908,11 +869,11 @@
 
 <div class="toast-stack" id="toastStack"></div>
 
-<!-- MODEL PICKER (để đổi model thủ công nếu muốn) -->
+<!-- MODEL PICKER -->
 <div class="picker-overlay" id="pickerOverlay">
   <div class="picker">
     <div class="picker-head">
-      <div class="picker-title"><span class="ico">◈</span> Đổi model miễn phí</div>
+      <div class="picker-title"><span class="ico">◈</span> Chọn model miễn phí</div>
       <button class="icon-btn" onclick="closePicker()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -921,7 +882,7 @@
       <div class="picker-search">
         <input type="text" id="pickerSearch" placeholder="Tìm model..." />
       </div>
-      <div class="model-list" id="pickerList"></div>
+      <div id="pickerList"></div>
     </div>
   </div>
 </div>
@@ -929,6 +890,88 @@
 <script>
 (function(){
 'use strict';
+
+/* ============================================================
+   DANH SÁCH MODEL FREE — HARD-CODED
+   Không cần quét /models, có key là dùng được ngay
+   ============================================================ */
+const FREE_MODELS = [
+  'apodex/apodex-1.1-mini:free',
+  'cohere/aya-expanse-32b',
+  'cohere/aya-vision-32b',
+  'cohere/command-a',
+  'cohere/command-a-plus',
+  'cohere/command-a-reasoning',
+  'cohere/command-a-translate',
+  'cohere/command-a-vision',
+  'cohere/command-r-08-2024',
+  'cohere/command-r-plus-08-2024',
+  'cohere/command-r7b-12-2024',
+  'cohere/north-mini-code',
+  'cohere/north-small-translate',
+  'cohere/tiny-aya-earth',
+  'cohere/tiny-aya-fire',
+  'cohere/tiny-aya-global',
+  'cohere/tiny-aya-water',
+  'dots-studio/dots-3-note-preview:free',
+  'inclusionai/ling-3.0-flash-sante:free',
+  'liquid/lfm-2.5-2.6b:free',
+  'meituan/longcat-2.0',
+  'meituan/longcat-2.5-preview:free',
+  'meta/muse-spark-1.2-contributor:free',
+  'meta/muse-spark-1.3-contributor:free',
+  'mistralai/codestral-2508',
+  'mistralai/devstral-medium',
+  'mistralai/ministral-14b',
+  'mistralai/ministral-3b',
+  'mistralai/ministral-8b',
+  'mistralai/mistral-large-2512',
+  'mistralai/mistral-medium-3.5',
+  'mistralai/mistral-small-2603',
+  'qwen/qwen-plus-2025-07-28:free',
+  'qwen/qwen3-coder-plus:free',
+  'qwen/qwen3-max:free',
+  'qwen/qwen3-omni-flash:free',
+  'qwen/qwen3-vl-plus:free',
+  'qwen/qwen3.5-397b-a17b:free',
+  'qwen/qwen3.5-flash:free',
+  'qwen/qwen3.5-omni-flash:free',
+  'qwen/qwen3.5-omni-plus:free',
+  'qwen/qwen3.5-plus:free',
+  'qwen/qwen3.6-27b:free',
+  'qwen/qwen3.6-35b-a3b:free',
+  'qwen/qwen3.6-max-preview:free',
+  'qwen/qwen3.6-plus:free',
+  'qwen/qwen3.7-flash:free',
+  'qwen/qwen3.7-max:free',
+  'qwen/qwen3.7-plus:free',
+  'qwen/qwen3.8-max:free',
+  'qwen/qwen3.8-omni-flash:free',
+  'sensenova/sensenova-6.7-flash-lite',
+  'sensenova/sensenova-6.8-flash-lite',
+  'stealth/big-pickle',
+  'stealth/space-bunny-alpha:free',
+];
+
+/* Thứ tự ưu tiên chọn model tốt nhất khi auto */
+const PREFERRED = [
+  /qwen3\.8-max/i,
+  /qwen3\.7-max/i,
+  /qwen3\.7-plus/i,
+  /qwen3\.6-plus/i,
+  /qwen3-max/i,
+  /qwen3-coder-plus/i,
+  /qwen3\.5-plus/i,
+  /mistral-large/i,
+  /mistral-medium/i,
+  /mistral-small/i,
+  /ministral-14b/i,
+  /ministral-8b/i,
+  /command-a-plus/i,
+  /command-a/i,
+  /deepseek/i,
+  /qwen/i,
+];
 
 /* ===== UTILS ===== */
 const $ = id => document.getElementById(id);
@@ -973,13 +1016,14 @@ function toast(msg, type){
   $('toastStack').appendChild(t);
   setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, 2600);
 }
+const getVendor = id => id.split('/')[0];
 
 /* ===== STATE ===== */
 const S = {
   baseUrl: 'https://api.xkiro.com/v1',
   apiKey: '',
   authType: 'bearer',
-  freeModels: [],
+  freeModels: FREE_MODELS.slice(),
   selectedModel: '',
   streaming: false,
   abort: null,
@@ -996,12 +1040,20 @@ const S = {
   lang: 'auto',
   historyLimit: 20,
 };
-const STORE_KEY = 'xkiro_private_v1';
+const STORE_KEY = 'xkiro_hardcoded_v1';
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
 function load(){
   try{
     const d = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
-    Object.keys(d).forEach(k => { if (k in S && !['abort','streaming'].includes(k)) S[k] = d[k]; });
+    Object.keys(d).forEach(k => {
+      if (k in S && !['abort','streaming'].includes(k)){
+        // Không override freeModels bằng cache — luôn dùng hard-coded
+        if (k === 'freeModels') return;
+        S[k] = d[k];
+      }
+    });
+    // Đảm bảo luôn có model
+    S.freeModels = FREE_MODELS.slice();
   }catch(e){}
 }
 
@@ -1012,46 +1064,13 @@ function buildHeaders(){
   else h['x-api-key']=S.apiKey;
   return h;
 }
-async function scanModels(){
-  const url=S.baseUrl.replace(/\/+$/,'')+'/models';
-  const res=await fetch(url,{headers:buildHeaders()});
-  if(!res.ok){ const t=await res.text().catch(()=>''); throw new Error('HTTP '+res.status+' '+t.slice(0,150)); }
-  const d=await res.json();
-  let raw=[];
-  if(Array.isArray(d)) raw=d;
-  else if(Array.isArray(d.data)) raw=d.data;
-  else if(Array.isArray(d.models)) raw=d.models;
-  else if(Array.isArray(d.result)) raw=d.result;
-  const anyPrice=raw.some(m=>typeof m==='object'&&m&&isFree(m).hasPrice);
-  const out=[];
-  for(const m of raw){
-    const id=typeof m==='string'?m:(m.id||m.model||m.name||m.slug||'');
-    if(!id) continue;
-    const free=typeof m==='string'?heuristicFree(id):(anyPrice?isFree(m).free:heuristicFree(id));
-    if(free) out.push({id});
+function pickBest(){
+  for(const r of PREFERRED){
+    const f = S.freeModels.find(m => r.test(m));
+    if(f) return f;
   }
-  const seen=new Set();
-  return out.filter(m=>{ if(seen.has(m.id)) return false; seen.add(m.id); return true; });
+  return S.freeModels[0] || '';
 }
-function isFree(m){
-  if(typeof m==='string') return {free:heuristicFree(m),hasPrice:false};
-  let free=true,hasPrice=false;
-  const pf=['price','pricing','input_price','output_price','input','output','cost','input_cost','output_cost','prompt_price','completion_price'];
-  for(const f of pf){
-    const v=m[f]; if(v==null) continue; hasPrice=true;
-    if(typeof v==='number'){ if(v>0) free=false; }
-    else if(typeof v==='object'){ if(Object.values(v).map(Number).some(n=>!isNaN(n)&&n>0)) free=false; }
-    else if(typeof v==='string'){ const n=parseFloat(v); if(!isNaN(n)&&n>0) free=false; }
-  }
-  if(m.is_free===false||m.free===false||m.paid===true) free=false;
-  if(['premium','paid'].includes(String(m.tier||'').toLowerCase())) free=false;
-  if(['premium','paid'].includes(String(m.access||'').toLowerCase())) free=false;
-  return {free,hasPrice};
-}
-const FREE_PATTERNS=[/^mistralai\//i,/^ministral/i,/^devstral/i,/^codestral/i,/^deepseek\//i,/^minimax\//i,/^qwen/i,/(^|\/)[^/]*gemma/i,/-free$/i,/:free$/i];
-const heuristicFree = id => FREE_PATTERNS.some(r=>r.test(id));
-const PREFERRED = [/deepseek.*v4.*flash/i,/deepseek.*v4/i,/deepseek.*flash/i,/deepseek.*v3/i,/deepseek/i,/mistral.*small/i,/ministral.*8b/i,/mistral/i,/ministral/i,/minimax.*m3/i,/minimax/i,/qwen/i];
-function pickBest(list){ for(const r of PREFERRED){ const f=list.find(m=>r.test(m.id)); if(f) return f.id; } return list[0]?.id||''; }
 
 /* ===== UI ===== */
 function setStatus(type, text){
@@ -1116,38 +1135,83 @@ function scrollBottom(){
 }
 
 /* ============================================================
-   SLASH COMMANDS — HIDDEN & PRIVATE
-   Không expose ra UI, không autocomplete, không hiển thị trong help
-   Chỉ những ai biết mới gõ được
+   AUTO SETUP — chỉ verify key, KHÔNG quét models
+   ============================================================ */
+async function autoSetup(){
+  setStatus('warn','Đang thiết lập...');
+  updateModelChip('đang xác thực...', true);
+
+  // Verify key
+  const s1 = addSys('Đang xác thực API key...', null, true);
+  try{
+    const r = await fetch(S.baseUrl.replace(/\/+$/,'')+'/usage', { headers: buildHeaders() });
+    if (r.status === 401){
+      s1.remove();
+      addSys('API key không hợp lệ.', 'err');
+      setStatus('err','Key không hợp lệ');
+      updateModelChip('key không hợp lệ', true);
+      S.apiKey = '';
+      save();
+      return false;
+    }
+    // Key OK hoặc endpoint lỗi nhưng không phải 401 → coi như pass
+  }catch(e){
+    // Không chặn — có thể CORS hoặc endpoint khác
+  }
+  s1.remove();
+  addSys('✓ Đã xác thực API key', 'ok');
+
+  // Chọn model tốt nhất từ danh sách hard-coded
+  await new Promise(r => setTimeout(r, 250));
+  const best = pickBest();
+  if (!best){
+    addSys('Không có model nào khả dụng.', 'err');
+    setStatus('err','Không có model');
+    updateModelChip('không có model', true);
+    return false;
+  }
+  S.selectedModel = best;
+  save();
+  addSys('★ Đã chọn model: ' + best, 'ok');
+
+  // Xong
+  await new Promise(r => setTimeout(r, 200));
+  addSys('✨ Sẵn sàng trò chuyện! (' + S.freeModels.length + ' model free)', 'ok');
+
+  setStatus('ok','Sẵn sàng');
+  updateModelChip();
+  toast('Sẵn sàng — ' + S.freeModels.length + ' model free', 'ok');
+  return true;
+}
+
+/* ============================================================
+   COMMANDS — ẩn, không autocomplete
    ============================================================ */
 const COMMANDS = {
   '/api': async (args) => {
     const parts = args.trim().split(/\s+/).filter(Boolean);
-    if (!parts.length){
-      return { type:'err', text:'Cú pháp không hợp lệ.' };
-    }
+    if (!parts.length) return { type:'err', text:'Cú pháp không hợp lệ.' };
     S.apiKey = parts[0];
     if (parts[1]) S.baseUrl = parts[1];
     save();
-
-    const oldKey = S.apiKey;
-    // Ẩn input đi — không hiển thị lại key trong chat
     addSys('✓ Đã nhận API key', 'ok');
-
-    // Tự động chạy setup
     await autoSetup();
-    return null; // không thêm message nữa, autoSetup đã hiện
+    return null;
   },
   '/model': (args) => {
-    if (!S.freeModels.length) return { type:'err', text:'Chưa có model — chạy /api trước.' };
     const q = args.trim();
     if (!q){ openPicker(); return null; }
-    const f = S.freeModels.find(m => m.id === q) || S.freeModels.find(m => m.id.toLowerCase().includes(q.toLowerCase()));
+    const f = S.freeModels.find(m => m === q) ||
+              S.freeModels.find(m => m.toLowerCase().includes(q.toLowerCase()));
     if (!f) return { type:'err', text:'Không tìm thấy model.' };
-    S.selectedModel = f.id;
+    S.selectedModel = f;
     save();
     updateModelChip();
     return { type:'ok', text:'✓ Đã đổi model.' };
+  },
+  '/list': () => {
+    const lines = S.freeModels.map((m,i) => (m === S.selectedModel ? '★' : ' ') + ' ' + String(i+1).padStart(2,' ') + '. ' + m).join('\n');
+    return { type:'info', text: 'Danh sách ' + S.freeModels.length + ' model free:\n\n' + lines };
   },
   '/clear': () => {
     S.history = []; S.msgCount = 0; S.tokens = 0; S.lastLatency = 0;
@@ -1173,70 +1237,6 @@ const COMMANDS = {
   },
 };
 
-/* ===== AUTO SETUP (chạy sau khi có key) ===== */
-async function autoSetup(){
-  setStatus('warn','Đang thiết lập...');
-  updateModelChip('đang thiết lập...', true);
-
-  // Bước 1: verify
-  const s1 = addSys('Đang xác thực API key...', null, true);
-  try{
-    const r = await fetch(S.baseUrl.replace(/\/+$/,'')+'/usage', { headers: buildHeaders() });
-    if (r.status === 401){
-      s1.remove();
-      addSys('API key không hợp lệ.', 'err');
-      setStatus('err','Key không hợp lệ');
-      updateModelChip('key không hợp lệ', true);
-      S.apiKey = '';
-      save();
-      return;
-    }
-  }catch(e){ /* không chặn */ }
-  s1.remove();
-  addSys('✓ Đã xác thực API key', 'ok');
-
-  // Bước 2: quét
-  const s2 = addSys('Đang tìm model miễn phí...', null, true);
-  let list = [];
-  try{
-    list = await scanModels();
-  }catch(e){
-    s2.remove();
-    addSys('Không quét được model.', 'err');
-    setStatus('err','Quét thất bại');
-    updateModelChip('quét thất bại', true);
-    return;
-  }
-  if (!list.length){
-    s2.remove();
-    addSys('Không có model miễn phí nào.', 'err');
-    setStatus('err','Không có model free');
-    updateModelChip('không có model', true);
-    return;
-  }
-  S.freeModels = list;
-  s2.remove();
-  addSys('✓ Tìm thấy ' + list.length + ' model miễn phí', 'ok');
-
-  // Bước 3: chọn
-  const s3 = addSys('Đang chọn model tốt nhất...', null, true);
-  await new Promise(r => setTimeout(r, 300));
-  const best = pickBest(list);
-  S.selectedModel = best;
-  save();
-  s3.remove();
-  addSys('★ Đã chọn model: ' + best, 'ok');
-
-  // Xong
-  await new Promise(r => setTimeout(r, 250));
-  addSys('✨ Sẵn sàng trò chuyện!', 'ok');
-
-  setStatus('ok','Sẵn sàng');
-  updateModelChip();
-  toast('Sẵn sàng — ' + list.length + ' model free', 'ok');
-}
-
-/* ===== EXECUTE ===== */
 async function executeCommand(text){
   const trimmed = text.trim();
   const spaceIdx = trimmed.indexOf(' ');
@@ -1245,31 +1245,27 @@ async function executeCommand(text){
   const fn = COMMANDS[cmd];
   if (!fn) return { type:'err', text:'Lệnh không hợp lệ.' };
   try{
-    const result = await fn(args);
-    return result;
+    return await fn(args);
   }catch(e){
     return { type:'err', text:'Lỗi: ' + e.message };
   }
 }
 
-/* ===== CHAT ===== */
+/* ============================================================
+   CHAT
+   ============================================================ */
 async function send(){
   if(S.streaming){ if(S.abort) S.abort.abort(); return; }
   const text=$('input').value.trim();
   if(!text) return;
 
-  // Xoá input trước, không hiển thị lại
   $('input').value='';
   $('input').style.height='auto';
-  closeSlashMenu();
 
-  // Slash command?
+  // Slash command
   if(text.startsWith('/')){
-    // KHÔNG hiện tin nhắn user cho lệnh — ẩn hoàn toàn
     const result = await executeCommand(text);
-    if (result && result.text){
-      addSys(result.text, result.type);
-    }
+    if (result && result.text) addSys(result.text, result.type);
     return;
   }
 
@@ -1370,80 +1366,127 @@ async function send(){
   }
 }
 
-/* ===== MODEL PICKER ===== */
+/* ============================================================
+   MODEL PICKER — group theo vendor
+   ============================================================ */
 function openPicker(){ renderPicker(); $('pickerOverlay').classList.add('open'); }
 function closePicker(){ $('pickerOverlay').classList.remove('open'); }
 window.closePicker=closePicker;
+
 function renderPicker(){
-  const list=$('pickerList');
+  const box=$('pickerList');
   const q=($('pickerSearch').value||'').toLowerCase();
-  if(!S.freeModels.length){
-    list.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--text-3);font-size:12.5px">Chưa có model.</div>';
+  const filtered = q ? S.freeModels.filter(m => m.toLowerCase().includes(q)) : S.freeModels;
+
+  if (!filtered.length){
+    box.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--text-3);font-size:12.5px">Không tìm thấy model nào.</div>';
     return;
   }
-  const filtered=S.freeModels.filter(m=>!q||m.id.toLowerCase().includes(q));
-  if(!filtered.length){ list.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--text-3);font-size:12.5px">Không tìm thấy.</div>'; return; }
-  list.innerHTML='';
-  filtered.forEach(m=>{
-    const row=el('div',{class:'model-row'+(m.id===S.selectedModel?' active':'')});
-    row.appendChild(el('span',{class:'m-name'},m.id));
-    row.appendChild(el('span',{class:'m-tag'},'free'));
-    row.addEventListener('click',()=>{
-      S.selectedModel=m.id;
-      save(); updateModelChip();
-      toast('Đã đổi model','ok');
+
+  // Group by vendor
+  const groups = {};
+  filtered.forEach(m => {
+    const v = getVendor(m);
+    if (!groups[v]) groups[v] = [];
+    groups[v].push(m);
+  });
+  const vendors = Object.keys(groups).sort();
+
+  let html = '';
+  vendors.forEach(v => {
+    html += '<div class="vendor-head">' +
+              '<span class="v-dot"></span>' +
+              '<span>' + esc(v) + '</span>' +
+              '<span class="v-count">' + groups[v].length + '</span>' +
+            '</div>';
+    html += '<div class="model-list">';
+    groups[v].forEach(m => {
+      const isActive = m === S.selectedModel;
+      // Highlight :free suffix
+      const slashIdx = m.indexOf('/');
+      const vendorPart = m.slice(0, slashIdx);
+      const modelPart = m.slice(slashIdx + 1);
+      let modelHtml;
+      if (modelPart.endsWith(':free')){
+        const base = modelPart.slice(0, -5);
+        modelHtml = esc(base) + '<span class="free-suffix">:free</span>';
+      } else {
+        modelHtml = esc(modelPart);
+      }
+      html += '<div class="model-row' + (isActive ? ' active' : '') + '" data-model="' + esc(m) + '">' +
+                '<span class="m-name">' + esc(vendorPart) + '/' + modelHtml + '</span>' +
+                '<span class="m-tag">free</span>' +
+              '</div>';
+    });
+    html += '</div>';
+  });
+
+  box.innerHTML = html;
+
+  box.querySelectorAll('.model-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const m = row.getAttribute('data-model');
+      S.selectedModel = m;
+      save();
+      updateModelChip();
+      addSys('✓ Đã chọn model: ' + m, 'ok');
+      toast('Đã đổi model', 'ok');
       closePicker();
     });
-    list.appendChild(row);
   });
 }
-$('pickerSearch').addEventListener('input', renderPicker);
-$('pickerOverlay').addEventListener('click', e=>{ if(e.target.id==='pickerOverlay') closePicker(); });
 
-/* ===== SLASH MENU — ĐÃ BỎ =====
-   Không autocomplete, không gợi ý, không ai biết có lệnh gì
-*/
+$('pickerSearch').addEventListener('input', renderPicker);
+$('pickerOverlay').addEventListener('click', e => { if(e.target.id==='pickerOverlay') closePicker(); });
+
+/* ============================================================
+   SLASH MENU — disabled
+   ============================================================ */
 function openSlashMenu(){}
 function closeSlashMenu(){}
-function renderSlashMenu(){}
 
-/* ===== EVENTS ===== */
+/* ============================================================
+   EVENTS
+   ============================================================ */
 $('btnSend').addEventListener('click', send);
-$('input').addEventListener('keydown', e=>{
+$('input').addEventListener('keydown', e => {
   if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
 });
-$('input').addEventListener('input', ()=>{
+$('input').addEventListener('input', () => {
   $('input').style.height='auto';
   $('input').style.height=Math.min($('input').scrollHeight,220)+'px';
 });
 
-document.addEventListener('click', e=>{
-  const card=e.target.closest('.hint');
+document.addEventListener('click', e => {
+  const card = e.target.closest('.hint');
   if(card){
-    $('input').value=card.dataset.p;
+    $('input').value = card.dataset.p;
     $('input').focus();
     $('input').dispatchEvent(new Event('input'));
   }
 });
 
-$('modelChip').addEventListener('click', ()=>{
-  if(!S.freeModels.length) return;
+$('modelChip').addEventListener('click', () => {
   openPicker();
 });
 
-/* ===== INIT ===== */
+/* ============================================================
+   INIT
+   ============================================================ */
 load();
+S.freeModels = FREE_MODELS.slice(); // luôn dùng hard-coded
 
-if (S.apiKey && S.selectedModel && S.freeModels.length){
-  // Khôi phục phiên trước
+if (S.apiKey && S.selectedModel){
+  // Khôi phục phiên
   $('stream').style.display='flex';
   $('hero').style.display='none';
   addSys('✓ Đã khôi phục phiên làm việc', 'ok');
+  addSys('★ Model: ' + S.selectedModel, null);
   setStatus('ok','Sẵn sàng');
   updateModelChip();
 }
 else if (S.apiKey){
-  // Có key, chưa có model
+  // Có key, chưa có model → setup
   $('stream').style.display='flex';
   $('hero').style.display='none';
   setStatus('warn','Đang thiết lập...');
@@ -1451,7 +1494,7 @@ else if (S.apiKey){
   setTimeout(() => autoSetup(), 400);
 }
 else {
-  // Chưa có key — để hero hiện, user tự gõ /api
+  // Chưa có key
   setStatus('warn','Chưa có API key');
   updateModelChip('chưa có model', true);
 }
