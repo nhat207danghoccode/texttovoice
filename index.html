@@ -6,6 +6,7 @@
   <title>My App</title>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#0f172a" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="My App" />
@@ -21,18 +22,13 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 24px; padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom); text-align: center;
-      overflow: hidden;
+      overflow: hidden; position: relative;
     }
-
-    /* Nền ánh sáng động */
     body::before {
-      content: '';
-      position: absolute;
-      top: -200px; left: 50%; transform: translateX(-50%);
+      content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
       width: 500px; height: 500px;
       background: radial-gradient(circle, rgba(59,130,246,0.25) 0%, transparent 70%);
-      pointer-events: none;
-      animation: pulse 4s ease-in-out infinite;
+      pointer-events: none; animation: pulse 4s ease-in-out infinite;
     }
     @keyframes pulse {
       0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
@@ -45,18 +41,17 @@
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 28px;
       box-shadow: 0 20px 50px rgba(59,130,246,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
-      position: relative;
-      z-index: 1;
+      position: relative; z-index: 1;
     }
     .logo svg { width: 56px; height: 56px; }
 
     h1 { font-size: 28px; margin-bottom: 10px; font-weight: 800; letter-spacing: -0.5px; position: relative; z-index: 1; }
     p { color: #94a3b8; margin-bottom: 36px; max-width: 380px; line-height: 1.6; font-size: 15px; position: relative; z-index: 1; }
 
-    /* ============ NÚT CÀI ĐẶT XỊN ============ */
+    /* NÚT CÀI ĐẶT */
     #installBtn {
-      display: none;
       position: relative;
+      display: inline-flex;
       align-items: center;
       gap: 12px;
       padding: 18px 34px 18px 28px;
@@ -77,25 +72,21 @@
       transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
                   box-shadow 0.25s ease;
       z-index: 1;
+      animation: slideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    #installBtn.show { display: inline-flex; animation: slideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
     @keyframes slideIn {
       from { opacity: 0; transform: translateY(20px) scale(0.9); }
       to   { opacity: 1; transform: translateY(0) scale(1); }
     }
+    #installBtn.hide { display: none; }
 
-    /* Ánh sáng lướt qua */
     #installBtn::before {
-      content: '';
-      position: absolute;
-      top: 0; left: -100%;
+      content: ''; position: absolute; top: 0; left: -100%;
       width: 100%; height: 100%;
       background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
       transition: left 0.6s ease;
     }
     #installBtn:hover::before { left: 100%; }
-
     #installBtn:hover {
       transform: translateY(-2px);
       box-shadow:
@@ -105,34 +96,19 @@
     }
     #installBtn:active {
       transform: translateY(0) scale(0.97);
-      box-shadow:
-        0 6px 20px rgba(59,130,246,0.5),
-        inset 0 1px 0 rgba(255,255,255,0.25);
+      box-shadow: 0 6px 20px rgba(59,130,246,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
     }
-
-    /* Icon download trong nút */
     #installBtn .btn-icon {
-      width: 22px; height: 22px;
-      flex-shrink: 0;
+      width: 22px; height: 22px; flex-shrink: 0;
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    #installBtn:hover .btn-icon {
-      transform: translateY(2px);
-      animation: bounce 0.6s ease infinite alternate;
-    }
-    @keyframes bounce {
-      from { transform: translateY(0); }
-      to   { transform: translateY(4px); }
-    }
+    #installBtn:hover .btn-icon { animation: bounce 0.6s ease infinite alternate; }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(4px); } }
 
-    /* Chấm sáng nhấp nháy */
     #installBtn .dot {
-      position: absolute;
-      top: 12px; right: 14px;
-      width: 8px; height: 8px;
-      background: #4ade80;
-      border-radius: 50%;
-      box-shadow: 0 0 10px #4ade80;
+      position: absolute; top: 12px; right: 14px;
+      width: 8px; height: 8px; background: #4ade80;
+      border-radius: 50%; box-shadow: 0 0 10px #4ade80;
       animation: blink 1.5s ease-in-out infinite;
     }
     @keyframes blink {
@@ -140,41 +116,44 @@
       50% { opacity: 0.4; transform: scale(0.8); }
     }
 
-    /* ============ BADGE ĐÃ CÀI ============ */
+    /* BADGE */
     .badge {
       display: none; align-items: center; gap: 8px;
       padding: 10px 20px; border-radius: 100px;
       background: rgba(34,197,94,0.12);
       border: 1px solid rgba(74,222,128,0.3);
-      color: #4ade80;
-      font-size: 14px; font-weight: 600;
+      color: #4ade80; font-size: 14px; font-weight: 600;
       position: relative; z-index: 1;
     }
+    .badge.show { display: inline-flex; }
     .badge svg { width: 18px; height: 18px; }
 
-    /* ============ MODAL iOS ============ */
+    /* MODAL */
     .modal-overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.75);
       backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      display: none; align-items: flex-end; justify-content: center;
+      display: none; align-items: center; justify-content: center;
       z-index: 1000; padding: 16px;
-      padding-bottom: calc(16px + env(safe-area-inset-bottom));
     }
     .modal-overlay.show { display: flex; }
     .modal {
       background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
       border-radius: 24px; padding: 28px 24px 24px;
-      max-width: 420px; width: 100%; text-align: left;
+      max-width: 440px; width: 100%; text-align: left;
       animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
       border: 1px solid rgba(255,255,255,0.1);
       box-shadow: 0 -10px 60px rgba(0,0,0,0.5);
     }
-    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal h3 { font-size: 19px; margin-bottom: 20px; color: #fff; display: flex; align-items: center; gap: 10px; }
-    .modal h3 svg { width: 22px; height: 22px; color: #3b82f6; }
-    .modal ol { padding-left: 20px; color: #cbd5e1; line-height: 2.1; font-size: 15px; }
-    .modal ol li { margin-bottom: 6px; }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal h3 {
+      font-size: 19px; margin-bottom: 20px; color: #fff;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .modal h3 svg { width: 24px; height: 24px; color: #3b82f6; flex-shrink: 0; }
+    .modal ol { padding-left: 22px; color: #cbd5e1; line-height: 2; font-size: 15px; }
+    .modal ol li { margin-bottom: 8px; }
+    .modal ol li strong { color: #fff; }
     .modal-close {
       margin-top: 24px; width: 100%; padding: 15px;
       background: linear-gradient(135deg, #3b82f6, #8b5cf6);
@@ -188,16 +167,22 @@
 
     .share-icon {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 24px; height: 24px; vertical-align: middle;
+      width: 26px; height: 26px; vertical-align: middle;
       background: #3b82f6; color: #fff;
-      border-radius: 6px; margin: 0 4px;
+      border-radius: 7px; margin: 0 4px;
     }
-    .share-icon svg { width: 14px; height: 14px; }
+    .share-icon svg { width: 15px; height: 15px; }
+
+    .key-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 1px 8px; background: #334155; color: #fff;
+      border-radius: 6px; font-size: 13px; font-weight: 700;
+      margin: 0 2px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Logo SVG -->
   <div class="logo">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
@@ -208,7 +193,7 @@
   <h1>My App</h1>
   <p>Trải nghiệm toàn màn hình như app native. Bấm nút bên dưới để cài đặt!</p>
 
-  <!-- NÚT CÀI ĐẶT -->
+  <!-- NÚT CÀI ĐẶT - LUÔN HIỆN -->
   <button id="installBtn" aria-label="Thêm vào màn hình chính">
     <span class="dot"></span>
     <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -218,7 +203,6 @@
     <span>Thêm vào màn hình chính</span>
   </button>
 
-  <!-- BADGE ĐÃ CÀI -->
   <div id="installedBadge" class="badge">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -226,90 +210,163 @@
     Đang chạy toàn màn hình
   </div>
 
-  <!-- MODAL iOS -->
-  <div class="modal-overlay" id="iosModal">
+  <!-- MODAL HƯỚNG DẪN CHUNG -->
+  <div class="modal-overlay" id="guideModal">
     <div class="modal">
       <h3>
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="5" y="2" width="14" height="20" rx="2" stroke="currentColor" stroke-width="2"/>
-          <path d="M12 18h.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 8v5M12 16.5h.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
-        Thêm vào màn hình chính
+        <span id="guideTitle">Thêm vào màn hình chính</span>
       </h3>
-      <ol>
-        <li>Nhấn nút
-          <span class="share-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4 14v4a2 2 0 002 2h12a2 2 0 002-2v-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
-          </span>
-          Chia sẻ trên Safari
-        </li>
-        <li>Cuộn xuống, chọn <strong>"Thêm vào MH chính"</strong></li>
-        <li>Nhấn <strong>"Thêm"</strong> ở góc phải trên</li>
-        <li>Mở app từ màn hình chính → toàn màn hình!</li>
-      </ol>
-      <button class="modal-close" onclick="document.getElementById('iosModal').classList.remove('show')">Đã hiểu</button>
+      <ol id="guideSteps"></ol>
+      <button class="modal-close" onclick="document.getElementById('guideModal').classList.remove('show')">Đã hiểu</button>
     </div>
   </div>
 
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then(r => console.log('✅ SW:', r.scope))
-        .catch(e => console.warn('⚠️ SW fail:', e.message));
-    });
-  }
-
-  const installBtn = document.getElementById('installBtn');
-  const installedBadge = document.getElementById('installedBadge');
-  const iosModal = document.getElementById('iosModal');
-
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isStandalone =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true;
-
-  let deferredPrompt = null;
-
-  if (isStandalone) {
-    installedBadge.style.display = 'inline-flex';
-  } else {
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installBtn.classList.add('show');
-    });
-    if (isIOS) installBtn.classList.add('show');
-  }
-
-  installBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log('Kết quả:', outcome);
-      deferredPrompt = null;
-      installBtn.classList.remove('show');
-      return;
-    }
-    if (isIOS) {
-      iosModal.classList.add('show');
-      return;
-    }
-    alert('Trình duyệt chưa hỗ trợ. Dùng Chrome/Edge (Android/PC) hoặc Safari (iOS).');
+/* ===== ĐĂNG KÝ SERVICE WORKER ===== */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(r => console.log('✅ SW:', r.scope))
+      .catch(e => console.warn('⚠️ SW fail:', e.message));
   });
+}
 
-  iosModal.addEventListener('click', (e) => {
-    if (e.target === iosModal) iosModal.classList.remove('show');
-  });
+const installBtn = document.getElementById('installBtn');
+const installedBadge = document.getElementById('installedBadge');
+const guideModal = document.getElementById('guideModal');
+const guideTitle = document.getElementById('guideTitle');
+const guideSteps = document.getElementById('guideSteps');
 
-  window.addEventListener('appinstalled', () => {
-    installBtn.classList.remove('show');
+/* ===== DETECT MÔI TRƯỜNG ===== */
+const ua = navigator.userAgent.toLowerCase();
+const isIOS = /iphone|ipad|ipod/.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isAndroid = /android/.test(ua);
+const isSafari = /safari/.test(ua) && !/chrome|chromium|edg|opr/.test(ua);
+const isFirefox = /firefox|fxios/.test(ua);
+const isEdge = /edg/.test(ua);
+const isChrome = /chrome|chromium|crios/.test(ua) && !isEdge && !/opr/.test(ua);
+
+const isStandalone =
+  window.matchMedia('(display-mode: standalone)').matches ||
+  window.navigator.standalone === true;
+
+let deferredPrompt = null;
+
+/* ===== XỬ LÝ HIỂN THỊ NÚT ===== */
+if (isStandalone) {
+  // Đang chạy toàn màn hình
+  installBtn.classList.add('hide');
+  installedBadge.classList.add('show');
+} else {
+  // LUÔN hiện nút - không chờ beforeinstallprompt
+  installBtn.classList.remove('hide');
+}
+
+/* Bắt sự kiện native prompt (nếu có) */
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  console.log('✅ beforeinstallprompt fired → 1-click available');
+});
+
+/* Khi cài xong */
+window.addEventListener('appinstalled', () => {
+  console.log('✅ App installed');
+  installBtn.classList.add('hide');
+  installedBadge.classList.add('show');
+  deferredPrompt = null;
+});
+
+/* ===== HÀM HIỆN HƯỚNG DẪN ===== */
+function showGuide(title, steps) {
+  guideTitle.textContent = title;
+  guideSteps.innerHTML = steps.map(s => `<li>${s}</li>`).join('');
+  guideModal.classList.add('show');
+}
+
+/* ===== XỬ LÝ CLICK NÚT ===== */
+installBtn.addEventListener('click', async () => {
+  // 1) Ưu tiên prompt native (Chrome/Edge đủ điều kiện)
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('User choice:', outcome);
     deferredPrompt = null;
-  });
+    if (outcome === 'accepted') {
+      installBtn.classList.add('hide');
+      installedBadge.classList.add('show');
+    }
+    return;
+  }
+
+  // 2) iOS Safari - luôn phải hướng dẫn (Apple cấm auto)
+  if (isIOS) {
+    if (isSafari) {
+      showGuide('Thêm vào MH chính (iOS)', [
+        'Nhấn nút <span class="share-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 14v4a2 2 0 002 2h12a2 2 0 002-2v-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span> <strong>Chia sẻ</strong> trên thanh Safari',
+        'Cuộn xuống, chọn <strong>"Thêm vào MH chính"</strong>',
+        'Nhấn <strong>"Thêm"</strong> ở góc phải trên',
+        'Mở app từ màn hình chính → toàn màn hình!'
+      ]);
+    } else {
+      showGuide('Thêm vào MH chính (iOS)', [
+        'Mở trang này bằng <strong>Safari</strong> (không dùng Chrome iOS)',
+        'Nhấn nút <strong>Chia sẻ</strong> (biểu tượng vuông có mũi tên)',
+        'Chọn <strong>"Thêm vào MH chính"</strong> → nhấn <strong>"Thêm"</strong>'
+      ]);
+    }
+    return;
+  }
+
+  // 3) Android Chrome/Edge - hướng dẫn bấm menu
+  if (isAndroid) {
+    showGuide('Cài đặt trên Android', [
+      'Nhấn menu <span class="key-icon">⋮</span> ở góc phải trên Chrome',
+      'Chọn <strong>"Cài đặt ứng dụng"</strong> hoặc <strong>"Thêm vào MH chính"</strong>',
+      'Xác nhận <strong>"Cài đặt"</strong>',
+      'Mở app từ màn hình chính → toàn màn hình!'
+    ]);
+    return;
+  }
+
+  // 4) Desktop Chrome/Edge - hướng dẫn bấm icon ⊕ hoặc menu
+  if (isChrome || isEdge) {
+    showGuide('Cài đặt trên máy tính', [
+      'Nhìn lên <strong>thanh địa chỉ</strong> → bấm icon <strong>⊕</strong> hoặc <strong>💻</strong> (bên phải URL)',
+      'Hoặc nhấn menu <span class="key-icon">⋮</span> → chọn <strong>"Cài đặt My App..."</strong> (Edge: <strong>"Ứng dụng" → "Cài đặt trang này dưới dạng ứng dụng"</strong>)',
+      'Nhấn <strong>"Cài đặt"</strong> trong hộp thoại',
+      'App sẽ mở từ Start Menu / Applications → <strong>toàn màn hình</strong>!'
+    ]);
+    return;
+  }
+
+  // 5) Firefox - không hỗ trợ PWA
+  if (isFirefox) {
+    showGuide('Firefox chưa hỗ trợ cài PWA', [
+      'Firefox không hỗ trợ cài đặt PWA trên desktop',
+      'Mở trang bằng <strong>Chrome</strong> hoặc <strong>Edge</strong> để cài đặt',
+      'Hoặc thêm bookmark để truy cập nhanh'
+    ]);
+    return;
+  }
+
+  // 6) Fallback chung
+  showGuide('Thêm vào màn hình chính', [
+    'Mở menu trình duyệt (⋮ hoặc ☰)',
+    'Tìm mục <strong>"Cài đặt ứng dụng"</strong>, <strong>"Install app"</strong>, hoặc <strong>"Thêm vào MH chính"</strong>',
+    'Xác nhận để cài đặt'
+  ]);
+});
+
+/* Đóng modal khi bấm nền */
+guideModal.addEventListener('click', (e) => {
+  if (e.target === guideModal) guideModal.classList.remove('show');
+});
 </script>
 </body>
 </html>
