@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>My App</title>
-  <link rel="manifest" href="/manifest.json" />
+  <title>Text To Voice</title>
+  
+  <!-- ĐÃ SỬA: Đường dẫn tương đối (bỏ dấu /) -->
+  <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0f172a" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="My App" />
-  <link rel="apple-touch-icon" href="/icon-192.png" />
-  <link rel="icon" type="image/png" href="/icon-192.png" />
+  <meta name="apple-mobile-web-app-title" content="Text To Voice" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
 
   <style>
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -190,10 +192,10 @@
     </svg>
   </div>
 
-  <h1>My App</h1>
+  <h1>Text To Voice</h1>
   <p>Trải nghiệm toàn màn hình như app native. Bấm nút bên dưới để cài đặt!</p>
 
-  <!-- NÚT CÀI ĐẶT - LUÔN HIỆN -->
+  <!-- NÚT CÀI ĐẶT -->
   <button id="installBtn" aria-label="Thêm vào màn hình chính">
     <span class="dot"></span>
     <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -210,7 +212,7 @@
     Đang chạy toàn màn hình
   </div>
 
-  <!-- MODAL HƯỚNG DẪN CHUNG -->
+  <!-- MODAL HƯỚNG DẪN -->
   <div class="modal-overlay" id="guideModal">
     <div class="modal">
       <h3>
@@ -226,10 +228,11 @@
   </div>
 
 <script>
-/* ===== ĐĂNG KÝ SERVICE WORKER ===== */
+/* ===== ĐĂNG KÝ SERVICE WORKER (ĐÃ SỬA ĐƯỜNG DẪN) ===== */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    // Bỏ dấu / ở đầu
+    navigator.serviceWorker.register('sw.js')
       .then(r => console.log('✅ SW:', r.scope))
       .catch(e => console.warn('⚠️ SW fail:', e.message));
   });
@@ -241,7 +244,6 @@ const guideModal = document.getElementById('guideModal');
 const guideTitle = document.getElementById('guideTitle');
 const guideSteps = document.getElementById('guideSteps');
 
-/* ===== DETECT MÔI TRƯỜNG ===== */
 const ua = navigator.userAgent.toLowerCase();
 const isIOS = /iphone|ipad|ipod/.test(ua) ||
               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -257,24 +259,19 @@ const isStandalone =
 
 let deferredPrompt = null;
 
-/* ===== XỬ LÝ HIỂN THỊ NÚT ===== */
 if (isStandalone) {
-  // Đang chạy toàn màn hình
   installBtn.classList.add('hide');
   installedBadge.classList.add('show');
 } else {
-  // LUÔN hiện nút - không chờ beforeinstallprompt
   installBtn.classList.remove('hide');
 }
 
-/* Bắt sự kiện native prompt (nếu có) */
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   console.log('✅ beforeinstallprompt fired → 1-click available');
 });
 
-/* Khi cài xong */
 window.addEventListener('appinstalled', () => {
   console.log('✅ App installed');
   installBtn.classList.add('hide');
@@ -282,16 +279,14 @@ window.addEventListener('appinstalled', () => {
   deferredPrompt = null;
 });
 
-/* ===== HÀM HIỆN HƯỚNG DẪN ===== */
 function showGuide(title, steps) {
   guideTitle.textContent = title;
   guideSteps.innerHTML = steps.map(s => `<li>${s}</li>`).join('');
   guideModal.classList.add('show');
 }
 
-/* ===== XỬ LÝ CLICK NÚT ===== */
 installBtn.addEventListener('click', async () => {
-  // 1) Ưu tiên prompt native (Chrome/Edge đủ điều kiện)
+  // 1) Chrome/Edge đủ điều kiện -> Cài đặt trực tiếp
   if (deferredPrompt) {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
@@ -304,7 +299,7 @@ installBtn.addEventListener('click', async () => {
     return;
   }
 
-  // 2) iOS Safari - luôn phải hướng dẫn (Apple cấm auto)
+  // 2) iOS Safari
   if (isIOS) {
     if (isSafari) {
       showGuide('Thêm vào MH chính (iOS)', [
@@ -323,7 +318,7 @@ installBtn.addEventListener('click', async () => {
     return;
   }
 
-  // 3) Android Chrome/Edge - hướng dẫn bấm menu
+  // 3) Android
   if (isAndroid) {
     showGuide('Cài đặt trên Android', [
       'Nhấn menu <span class="key-icon">⋮</span> ở góc phải trên Chrome',
@@ -334,18 +329,18 @@ installBtn.addEventListener('click', async () => {
     return;
   }
 
-  // 4) Desktop Chrome/Edge - hướng dẫn bấm icon ⊕ hoặc menu
+  // 4) Desktop Chrome/Edge
   if (isChrome || isEdge) {
     showGuide('Cài đặt trên máy tính', [
       'Nhìn lên <strong>thanh địa chỉ</strong> → bấm icon <strong>⊕</strong> hoặc <strong>💻</strong> (bên phải URL)',
-      'Hoặc nhấn menu <span class="key-icon">⋮</span> → chọn <strong>"Cài đặt My App..."</strong> (Edge: <strong>"Ứng dụng" → "Cài đặt trang này dưới dạng ứng dụng"</strong>)',
+      'Hoặc nhấn menu <span class="key-icon">⋮</span> → chọn <strong>"Cài đặt Text To Voice..."</strong>',
       'Nhấn <strong>"Cài đặt"</strong> trong hộp thoại',
       'App sẽ mở từ Start Menu / Applications → <strong>toàn màn hình</strong>!'
     ]);
     return;
   }
 
-  // 5) Firefox - không hỗ trợ PWA
+  // 5) Firefox
   if (isFirefox) {
     showGuide('Firefox chưa hỗ trợ cài PWA', [
       'Firefox không hỗ trợ cài đặt PWA trên desktop',
@@ -355,7 +350,7 @@ installBtn.addEventListener('click', async () => {
     return;
   }
 
-  // 6) Fallback chung
+  // 6) Fallback
   showGuide('Thêm vào màn hình chính', [
     'Mở menu trình duyệt (⋮ hoặc ☰)',
     'Tìm mục <strong>"Cài đặt ứng dụng"</strong>, <strong>"Install app"</strong>, hoặc <strong>"Thêm vào MH chính"</strong>',
@@ -363,7 +358,6 @@ installBtn.addEventListener('click', async () => {
   ]);
 });
 
-/* Đóng modal khi bấm nền */
 guideModal.addEventListener('click', (e) => {
   if (e.target === guideModal) guideModal.classList.remove('show');
 });
